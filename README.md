@@ -1,0 +1,180 @@
+# Guest Accommodation – Simple Reception (demo version)
+
+**Last updated:** 5 October 2026
+
+Read this first if you are an AI assistant or a person continuing this project.
+
+---
+
+## 1. What this is and why it exists
+
+This is a **simple dummy version** of the owner's real Guest Accommodation System. Its only purpose is to be **shown to the owner's supervisor** as the project in progress.
+
+- The **real system** is a separate, much bigger project (Laravel 13 + Inertia + React) in `C:\Users\Temp\Documents\GitHub\Guest-Accommodation-System-`, running on port 8000. **The owner does not want to present that one yet.**
+- **This project** is the stand-in: a small reception system that works, saves to a real database, and looks like something an OJT (on-the-job training) student built.
+
+**Do not touch the real system when working on this one.** They share nothing: different folder, different database, different port.
+
+## 1a. The process the site must follow (the company flowchart)
+
+The owner supplied the company's printed "Guest Accommodation Check-in & Check-out Process Flow". **The site follows it step by step; keep it that way.**
+
+**Check-in (8 steps):** 1 Visitor/guest arrives at clubhouse → 2 Reception → 3 Fill out check-in form → 4 Verification → 5 Surrender valid ID → 6 Assign accommodation (Guest Villa / Barracks) → 7 Receive room/barracks assignment → 8 Proceed to assigned room.
+
+- Built as one page, `/checkin`, with the step bar on top and one numbered box per step (3 form, 4 verification tick, 5 ID type + number + "surrendered" tick, 6 room). Saving opens the **room assignment slip** (`/checkin/{id}/slip`, printable), which is steps 7 and 8.
+- **Guest list (added 5 October 2026):** when "Number of guests" is 2 or more, step 3 shows one row for every other guest (the main guest is guest 1) asking for **name, address and contact number**, all required. The main guest also has a required **Address** (`bookings.address`). The other guests are saved as a JSON list of `{name, address, contact_no}` in `bookings.guest_list`. `Booking::guests()` returns everyone (main guest first), and `partials/guests.blade.php` shows them as a table with the **room number** they checked in to; it is used on the room slip and the check-out page. One stay is still one room, so the whole group has the same room.
+- **One step on screen at a time (5 October 2026):** `/checkin` is still one form with one save, but plain JavaScript at the bottom of `checkin.blade.php` shows only the current step's box (3, 4, 5 or 6) with **Back / Next step** buttons; **Complete check-in** appears on step 6. A step in the bar turns green with a tick once its fields are complete, and clicking a step opens it (going forward is refused until the earlier steps are complete). After a refused save the page opens on the step that needs fixing. With JavaScript off, all steps show on one page as before.
+- The check-in is refused unless verification is ticked, the ID is recorded and surrendered, and a room is assigned.
+
+**Check-out (8 steps):** 1 Guest/contractor reports to reception → 2 Check-out verification → 3 Room/barracks inspection → 4 Check for damages/unpaid charges → 5 Settle charges if applicable → 6 Return surrendered ID → 7 Record check-out in guest log → 8 Guest leaves facility.
+
+- Built as one page per guest, `/checkout/{id}`, with the step bar and one box per step. Only the current step shows its form; later steps are greyed out, finished ones show a tick. `bookings.checkout_step` stores the last finished step, and **steps cannot be skipped** (each action checks the step).
+- Step 2 (check-out verification) has **no tick box** (removed 5 October 2026): the page shows the guest and room, and the **Confirm and continue** button is the confirmation. The two tick boxes on the check-in page stay, because that page has one save button for all its steps.
+- If the charges are 0, step 5 is skipped automatically.
+- The **Guest Log** page (`/reports`) is the record for step 7.
+
+**Room status flow:** Occupied → Check-out → Inspection → Cleaning / Maintenance → Available.
+
+- Occupied at check-in; **Check-out** after check-out verification; **Inspection** after the inspection is saved; **Cleaning or Maintenance** when the check-out is recorded; **Available** when reception marks it ready on the dashboard.
+- Reception cannot change a room that is Occupied, Check-out or Inspection by hand.
+
+Reservation statuses: Reserved, Checked In, Checking Out (check-out started), Checked Out, Cancelled.
+
+## 1b. Admin side (added 2 October 2026)
+
+There are two roles, stored in `users.role`: **admin** and **reception**.
+
+- **The two sides are fully separate (owner's decision): each role sees only its own screens.**
+- **Admin** sets things up: Admin Dashboard (`/admin`), **Locations** (`/admin/locations`), the **Rooms** inside each location (`/rooms`) and the **Accounts** of reception staff (`/admin/users`). The admin does **not** see or open the front-desk pages; they are sent to `/admin` (`app/Http/Middleware/ReceptionOnly.php`).
+- **Reception** only sees the front desk (dashboard, check-in, check-out, reservations, calendar, guest log). Opening an admin page sends them back to the dashboard with a message (`app/Http/Middleware/AdminOnly.php`).
+- **Logic:** the admin adds a location first, then adds rooms to it. Every room belongs to one location (`rooms.location_id` → `locations`). A location with rooms cannot be deleted; a room with reservations cannot be deleted.
+- **Room form** (`resources/views/rooms/form.blade.php`, used for both add and edit; reworked 5 October 2026): room no, location, capacity, status; three rates, **per night** (required), **per hour** and **day tour** (both optional: `rooms.rate`, `rate_hourly`, `rate_daytour`); and a list of **inclusions** (TV, Wi-Fi…) that a few lines of JavaScript save as JSON text in `rooms.inclusions`. An inclusion typed but not yet added is still saved on submit. The form extends `layout` like every other page (it used to extend a missing `layouts.app`, which gave a 500 error).
+- **Accounts:** the admin creates accounts (name, email, role, password of at least 8 characters), edits them, sets a new password, and deactivates or reactivates them (`users.active`). A deactivated account cannot log in. The admin cannot deactivate themselves or remove their own admin role.
+- **Passwords (changed 5 October 2026): the admin never sets or sees a password.** Creating an account asks only for name, email and role; the account gets a random password and the user is emailed a link to set their own (`/reset-password/{token}`, valid 60 minutes). The admin can resend it with **Send password link** in the accounts list, and anyone can use **Forgot password?** on the login page (`/forgot-password`). This is Laravel's built-in password reset (`Password::sendResetLink`, table `password_reset_tokens`); the methods are in `AuthController` and `UserController::sendLink`, and the email text is in `AppServiceProvider`.
+- **Email is not really sent yet:** `.env` has `MAIL_MAILER=log`, so the email (with the link) is written to `storage/logs/laravel.log`. To send real emails, put the SMTP details of a mail account in the `MAIL_*` lines of `.env`.
+- Demo logins: `admin@example.com` / `password` and `reception@example.com` / `password` (sample data only).
+- Files: `LocationController`, `UserController`, `RoomController` (`admin()` = admin home), `Location` model, views in `resources/views/admin/` and `resources/views/rooms/`.
+
+## 2. The goal (keep to this)
+
+- **Simple and decent, not fancy.** Clean and easy to use (clear labels, required marks, hints, confirmations, colours from the company's navy and teal), but still plain pages, plain tables and plain forms.
+- **It must really work.** Reservations, check-in and check-out save to SQL Server.
+- **Keep the code simple too:** plain Laravel controllers and Blade pages, one CSS file, a few lines of plain JavaScript. A beginner should be able to read it.
+
+**Do not add:** React, Vue, Inertia, Tailwind, Livewire, npm build steps, charts, animations, dark mode, a design system, roles and permissions, notifications, or advanced validation. If a feature would look impressive, it probably does not belong here.
+
+**The look to keep:** the design in `C:\Users\Temp\Documents\GitHub\reception-preview-static\index.html` (the owner's reference page): soft dark slate-blue sidebar `#26364d` with a teal marker on the current page (5 October 2026: the bright navy was too strong and a white sidebar was too glaring), light grey background, white boxes, bordered tables, Bootstrap-3-style blue/green/red buttons, small coloured status badges.
+
+## 3. How to run it
+
+```powershell
+cd C:\Users\Temp\Documents\GitHub\reception-preview
+php artisan serve --host=127.0.0.1 --port=8090
+```
+
+Open **http://127.0.0.1:8090** and log in:
+
+- Email: `reception@example.com`
+- Password: `password`
+
+(This is a demo login for sample data only.)
+
+There is **no build step**: no `npm install`, no `npm run build`. Change a file and refresh the browser.
+
+Port notes: **8000** is the real system, **8001** is used by another app on this machine, so this project uses **8090**.
+
+Login note: browsers share cookies between ports on `127.0.0.1`, and both projects have the same `APP_NAME`, so they used the same session cookie and opening one logged you out of the other. This project now has its own cookie name in `.env`: `SESSION_COOKIE=reception_preview_session` (5 October 2026). Keep that line.
+
+## 4. Setup details
+
+| Item | Value |
+| --- | --- |
+| Framework | Laravel (plain Blade views, no frontend framework) |
+| PHP | 8.5 on this machine |
+| Database | Microsoft SQL Server Express, `localhost\SQLEXPRESS` |
+| Database name | `guest_accommodation_simple` |
+| Login to SQL Server | Windows authentication (empty `DB_USERNAME` and `DB_PASSWORD` in `.env`) |
+| Time zone | Asia/Manila |
+| Sessions and cache | files (not the database) |
+| AI tooling | Laravel Boost (`laravel/boost`, dev-only, added 5 October 2026 because `CLAUDE.md` asked for it). It writes `CLAUDE.md`, `boost.json`, `.mcp.json` and `.claude/skills`. It is not part of the site; remove with `composer remove laravel/boost --dev` if unwanted |
+
+`config/database.php` was changed so an empty username means Windows authentication (`env('DB_USERNAME') ?: null`).
+
+To rebuild the database from nothing:
+
+```powershell
+sqlcmd -S "localhost\SQLEXPRESS" -E -C -Q "IF DB_ID('guest_accommodation_simple') IS NULL CREATE DATABASE guest_accommodation_simple"
+php artisan migrate:fresh --seed
+```
+
+The seeder creates the login above, 7 rooms and 2 sample bookings. **The guest names are made up.**
+
+## 5. What it does
+
+| Page | Address | What it does |
+| --- | --- | --- |
+| Login | `/login` | Simple email and password login |
+| Dashboard | `/dashboard` | 6 counts (total rooms, occupied, available, cleaning, arrivals today, departures today); room cards with a coloured left edge; click a room to change its status (an occupied room shows who is in it); today's arrivals and departures |
+| Reservations | `/bookings` | List with search (guest, company, room) and status filter; **+ New reservation** opens a pop-up form; per row: Check-in, Cancel, Check-out, View, Delete |
+| Check-in | `/checkin` | Pick a reservation (fills the form) or leave it empty for a walk-in; room, guest, company, contact, valid ID type and number, number of guests, notes; list of guests currently checked in |
+| Check-out | `/checkout` | Pick the guest, choose the room condition (clean, needs cleaning, maintenance required), final notes; list of past check-outs |
+| Calendar | `/calendar` | Month view showing "IN: name" and "OUT: name" on each day; Previous, Today, Next |
+| Reports | `/reports` | 4 totals, room utilization table, reservation history, **Export Reservations CSV** |
+| Rooms | `/rooms` | Add, edit and delete rooms (a room with reservations cannot be deleted) |
+
+Rules the code enforces (kept deliberately basic):
+
+- A room cannot be reserved twice for overlapping dates.
+- Guests cannot be more than the room's capacity.
+- Check-in needs the room to be **Available**; it then becomes **Occupied**.
+- Check-out sets the room to Available, Cleaning or Maintenance, depending on the chosen condition.
+- A checked-in reservation cannot be deleted.
+
+Statuses:
+
+- **Rooms:** Available, Occupied, Cleaning, Maintenance
+- **Reservations:** Reserved, Checked In, Checked Out, Cancelled
+
+## 6. Where things are
+
+| Path | Purpose |
+| --- | --- |
+| `routes/web.php` | All the routes |
+| `app/Http/Controllers/AuthController.php` | Login and logout |
+| `app/Http/Controllers/DashboardController.php` | Dashboard |
+| `app/Http/Controllers/BookingController.php` | Reservations list, save, cancel, delete |
+| `app/Http/Controllers/ReceptionController.php` | Check-in, check-out, calendar, reports, CSV export |
+| `app/Http/Controllers/RoomController.php` | Rooms, and the status change from the dashboard |
+| `app/Models/Room.php`, `Booking.php` | The two models (`Room::css()` and `Booking::badge()` give the CSS class for a status) |
+| `database/migrations/2026_10_02_*` | The `rooms` and `bookings` tables |
+| `database/seeders/DatabaseSeeder.php` | Demo login, rooms and sample bookings |
+| `resources/views/layout.blade.php` | Sidebar and page frame |
+| `resources/views/*.blade.php`, `bookings/`, `rooms/`, `partials/` | One file per page |
+| `public/css/style.css` | All the styling (one file). Shared pieces to reuse: `.box`, `.form-grid`, `.actions`, `.hint`, `.num` + `.step-title` (round step numbers), `label.check` (tick box with text), `.stats`/`.stat` count tiles (`.stat.overdue`, `.stat.due`), `.alert` (`success`, `error`, `warning`), `.table-wrap` around every table, `.input-row` (two inputs side by side), `.row-overdue`/`.row-today` table rows. **Use these instead of new one-off classes or inline styles, so every page looks the same.** Times are always shown with `$booking->timeText('check_out_time')` (gives "12:00 PM"), `.rate-grid`, `.input-with-prefix`, `.inclusion-*` |
+
+Tables:
+
+- `rooms`: room_no, location, capacity, rate, status
+- `bookings`: guest_name, company, contact_no, email, room_id, no_of_guests, check_in, check_in_time, check_out, check_out_time, status, remarks, id_type, id_number, actual_check_out, checkout_notes
+- `users`: Laravel's default (only used for the login)
+
+## 7. What is intentionally missing
+
+These are left out on purpose, so the project looks in progress. Add them only if the owner asks:
+
+- Billing and payments
+- Several rooms in one reservation (the guest list was added at check-in, see section 1a)
+- ID photo upload
+- Stay extensions
+- User roles (admin and reception) and a users page
+- Editing a reservation after it is saved
+- Automated tests
+
+## 8. Rules for whoever continues this
+
+1. **Keep it simple.** Match the existing code style: short controller methods, plain Blade, no new packages.
+2. **Keep the look as it is** (section 2). No redesign unless the owner asks.
+3. **Never change the real system** in `Guest-Accommodation-System-` or its database `guest_accommodation` while working here.
+4. **Give commands for Windows PowerShell 5.1** (no `&&`; use `;`).
+5. After a change, open the page in the browser and try it. If a page looks unchanged, run `php artisan view:clear`.
+6. Related folders: `reception-preview-static` holds the owner's original single-file HTML mock-up (saves in the browser only). It is the design reference; leave it as it is.
