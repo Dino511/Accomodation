@@ -26,8 +26,23 @@
                 <div><dt>No. of guests</dt><dd>{{ $booking->no_of_guests }}</dd></div>
                 <div><dt>Check-in</dt><dd>{{ $booking->check_in->format('M d, Y') }} {{ $booking->timeText('check_in_time') }}</dd></div>
                 <div><dt>Expected check-out</dt><dd>{{ $booking->check_out->format('M d, Y') }} {{ $booking->timeText('check_out_time') }}</dd></div>
+                <div><dt>Capacity</dt><dd>Good for {{ $booking->room->capacity }} guests</dd></div>
+                <div><dt>Rate</dt><dd>{{ $booking->billingRateLabel() }}: ₱{{ number_format((float) $booking->billing_rate, 2) }}</dd></div>
                 <div><dt>ID surrendered</dt><dd>{{ $booking->id_type ?: '—' }}</dd></div>
             </dl>
+
+            <div class="slip-inclusions">
+                <h3>Room inclusions</h3>
+                @if ($booking->room->inclusionsList())
+                    <ul>
+                        @foreach ($booking->room->inclusionsList() as $inclusion)
+                            <li>{{ $inclusion }}</li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p>No inclusions listed.</p>
+                @endif
+            </div>
 
             <br>
             @include('partials.guests')

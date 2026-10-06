@@ -15,7 +15,10 @@
             <h2>Check-out: {{ $booking->guest_name }}</h2>
             <p class="subtitle">Follow the steps in order.</p>
         </div>
-        <a class="btn" href="/checkout">Back to list</a>
+        <div class="actions">
+            <a class="btn primary" href="/billing/{{ $booking->id }}">View bill</a>
+            <a class="btn" href="/checkout">Back to list</a>
+        </div>
     </div>
 
     @include('partials.steps', ['steps' => App\Models\Booking::CHECKOUT_STEPS, 'current' => $current])
@@ -26,7 +29,7 @@
             <div><dt>Company</dt><dd>{{ $booking->company ?: '—' }}</dd></div>
             <div><dt>Room</dt><dd>{{ $booking->room->room_no }} ({{ $booking->room->location->name }})</dd></div>
             <div><dt>Room status</dt><dd><span class="badge {{ $booking->room->css() }}">{{ $booking->room->status }}</span></dd></div>
-            <div><dt>Checked in</dt><dd>{{ $booking->check_in->format('M d, Y') }}</dd></div>
+            <div><dt>Checked in</dt><dd>{{ $booking->billingStart()->format('M d, Y h:i A') }}</dd></div>
             <div><dt>ID held</dt><dd>{{ $booking->id_type ?: '—' }} {{ $booking->id_number }}</dd></div>
         </dl>
     </div>
@@ -53,7 +56,7 @@
 
     {{-- STEP 3 and 4 --}}
     <div class="box step {{ $state(3, 4) }}">
-        <div class="step-title"><span class="num">{{ $current > 4 ? '✓' : '3' }}</span><h3>Room inspection, damages and unpaid charges</h3></div>
+        <div class="step-title"><span class="num">{{ $current > 4 ? '✓' : '3' }}</span><h3>Room inspection and additional charges</h3></div>
         @if ($current == 3)
             <form method="POST" action="/checkout/{{ $booking->id }}/inspect">
                 @csrf
@@ -63,13 +66,8 @@
                         <input id="inspection_notes" name="inspection_notes" value="{{ old('inspection_notes') }}" placeholder="e.g. Room in good condition, key returned">
                     </div>
                     <div>
-                        <label for="damage_notes">Step 4: Damages or unpaid charges</label>
+                        <label for="damage_notes">Inspection notes about damages or unpaid charges</label>
                         <input id="damage_notes" name="damage_notes" value="{{ old('damage_notes') }}" placeholder="Leave empty if none">
-                    </div>
-                    <div>
-                        <label for="charges">Amount to pay (₱) <span class="req">*</span></label>
-                        <input id="charges" name="charges" type="number" min="0" step="0.01" value="{{ old('charges', 0) }}" required>
-                        <p class="hint">Enter 0 if there is nothing to pay.</p>
                     </div>
                     <div>
                         <label for="room_after">After check-out, the room needs <span class="req">*</span></label>
@@ -78,16 +76,38 @@
                             <option value="Maintenance">Maintenance (repair needed)</option>
                         </select>
                     </div>
+                    <div class="full">
+                        <label>Additional charges</label>
+                        <div id="additionalChargeLines" data-next-index="{{ count(old('additional_charges', $booking->additional_charges ?? [])) }}">
+                            @foreach (old('additional_charges', $booking->additional_charges ?? []) as $index => $line)
+                                <div class="billing-charge-line">
+                                    <select name="additional_charges[{{ $index }}][category]" aria-label="Charge category">
+                                        @foreach (['Extra service', 'Damage', 'Other'] as $category)
+                                            <option value="{{ $category }}" @selected(($line['category'] ?? '') === $category)>{{ $category }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input name="additional_charges[{{ $index }}][description]" value="{{ $line['description'] ?? '' }}" placeholder="Description" aria-label="Charge description">
+                                    <div class="input-with-prefix">
+                                        <span>₱</span>
+                                        <input name="additional_charges[{{ $index }}][amount]" type="number" min="0" step="0.01" value="{{ $line['amount'] ?? '' }}" placeholder="0.00" aria-label="Charge amount">
+                                    </div>
+                                    <button type="button" class="danger small remove-charge">Remove</button>
+                                </div>
+                            @endforeach
+                        </div>
+                        <button type="button" class="small" id="addChargeLine">+ Add charge</button>
+                        <p class="hint">Add extra services, damages, or other charges. Leave empty if there are none.</p>
+                    </div>
                 </div>
                 <br>
-                <button type="submit" class="primary">Save inspection</button>
+                <button type="submit" class="primary">Save inspection and charges</button>
                 <p class="hint">The room status changes to Inspection.</p>
             </form>
         @elseif ($current > 4)
             <dl class="details">
                 <div><dt>Inspection</dt><dd>{{ $booking->inspection_notes ?: 'No notes' }}</dd></div>
                 <div><dt>Damages / unpaid</dt><dd>{{ $booking->damage_notes ?: 'None' }}</dd></div>
-                <div><dt>Amount</dt><dd>₱{{ number_format($booking->charges, 2) }}</dd></div>
+                <div><dt>Additional charges</dt><dd>₱{{ number_format($booking->additionalChargeTotal(), 2) }}</dd></div>
                 <div><dt>Room needs</dt><dd>{{ $booking->room_after }}</dd></div>
             </dl>
         @else
@@ -97,15 +117,25 @@
 
     {{-- STEP 5 --}}
     <div class="box step {{ $state(5) }}">
-        <div class="step-title"><span class="num">{{ $current > 5 ? '✓' : 5 }}</span><h3>Settle charges (if any)</h3></div>
+        <div class="step-title"><span class="num">{{ $current > 5 ? '✓' : 5 }}</span><h3>Billing and payment</h3></div>
         @if ($current == 5)
-            <p style="margin-top:0">Amount to collect: <b>₱{{ number_format($booking->charges, 2) }}</b> ({{ $booking->damage_notes ?: 'charges' }})</p>
-            <form method="POST" action="/checkout/{{ $booking->id }}/settle" onsubmit="return confirm('Mark ₱{{ number_format($booking->charges, 2) }} as paid?')">
+            <dl class="details">
+                <div><dt>Accommodation</dt><dd>₱{{ number_format($booking->accommodationCharge(), 2) }}</dd></div>
+                <div><dt>Additional charges</dt><dd>₱{{ number_format($booking->additionalChargeTotal(), 2) }}</dd></div>
+                <div><dt>Total amount</dt><dd><b>₱{{ number_format($booking->totalAmount(), 2) }}</b></dd></div>
+                <div><dt>Amount paid</dt><dd>₱{{ number_format((float) $booking->amount_paid, 2) }}</dd></div>
+                <div><dt>Balance</dt><dd><b>₱{{ number_format($booking->balance(), 2) }}</b></dd></div>
+            </dl>
+            <p>Payment status: <b>{{ $booking->paymentStatus() }}</b></p>
+            <form method="POST" action="/checkout/{{ $booking->id }}/settle" onsubmit="return confirm('Record this payment?')">
                 @csrf
-                <button type="submit" class="success-btn">Mark as paid</button>
+                <label for="payment_amount">Payment received (₱)</label>
+                <input id="payment_amount" name="amount" type="number" min="0.01" max="{{ number_format($booking->balance(), 2, '.', '') }}" step="0.01" value="{{ old('amount', number_format($booking->balance(), 2, '.', '')) }}" required>
+                <button type="submit" class="success-btn">Record payment</button>
+                <p class="hint">Full payment is required before reception can return the ID. Partial payments remain on the bill.</p>
             </form>
         @elseif ($current > 5)
-            <p class="muted" style="margin:0">{{ $booking->charges > 0 ? '₱'.number_format($booking->charges, 2).' paid.' : 'No charges to settle.' }}</p>
+            <p class="muted" style="margin:0">Paid in full: ₱{{ number_format($booking->totalAmount(), 2) }}.</p>
         @else
             <p class="muted" style="margin:0">Waiting for the inspection.</p>
         @endif
@@ -123,7 +153,7 @@
         @elseif ($current > 6)
             <p class="muted" style="margin:0">ID returned to the guest.</p>
         @else
-            <p class="muted" style="margin:0">The ID is returned after the charges are settled.</p>
+            <p class="muted" style="margin:0">The ID is returned after the full bill is paid.</p>
         @endif
     </div>
 
@@ -152,4 +182,34 @@
             <p class="muted" style="margin:0">Last step, after the ID is returned.</p>
         @endif
     </div>
+
+    @if ($current == 3)
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const lines = document.getElementById('additionalChargeLines');
+                const addButton = document.getElementById('addChargeLine');
+
+                function addLine() {
+                    const index = Number(lines.dataset.nextIndex);
+                    lines.dataset.nextIndex = index + 1;
+
+                    const row = document.createElement('div');
+                    row.className = 'billing-charge-line';
+                    row.innerHTML = '<select name="additional_charges[' + index + '][category]" aria-label="Charge category" required>'
+                        + '<option>Extra service</option><option>Damage</option><option>Other</option></select>'
+                        + '<input name="additional_charges[' + index + '][description]" placeholder="Description" aria-label="Charge description" required>'
+                        + '<div class="input-with-prefix"><span>₱</span><input name="additional_charges[' + index + '][amount]" type="number" min="0" step="0.01" placeholder="0.00" aria-label="Charge amount" required></div>'
+                        + '<button type="button" class="danger small remove-charge">Remove</button>';
+                    lines.appendChild(row);
+                }
+
+                addButton.addEventListener('click', addLine);
+                lines.addEventListener('click', function (event) {
+                    if (event.target.classList.contains('remove-charge')) {
+                        event.target.closest('.billing-charge-line').remove();
+                    }
+                });
+            });
+        </script>
+    @endif
 @endsection

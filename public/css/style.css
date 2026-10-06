@@ -775,7 +775,7 @@ a.btn:active {
     display: grid;
 
     grid-template-columns:
-        repeat(auto-fill, minmax(170px, 1fr));
+        repeat(auto-fill, minmax(200px, 1fr));
 
     gap: 11px;
 }
@@ -784,7 +784,7 @@ a.btn:active {
     display: block;
 
     width: 100%;
-    min-height: 0;
+    min-height: 120px;
 
     padding: 13px;
 
@@ -856,6 +856,243 @@ a.btn:active {
     margin-top: 4px;
 
     color: var(--muted);
+}
+
+.room-rates {
+    display: block;
+    margin-top: 9px;
+    padding-top: 7px;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+}
+
+.room-rates-title {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.room-rate {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    line-height: 1.5;
+}
+
+.room-rate b {
+    color: var(--nav);
+    white-space: nowrap;
+}
+
+.room-card-inclusions {
+    display: block;
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.room-modal-box {
+    max-width: 540px;
+}
+
+.room-modal-box .modal-header {
+    margin-bottom: 15px;
+}
+
+.room-modal-box .modal-header h3 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.room-modal-box .modal-header p {
+    margin: 3px 0 0;
+}
+
+.room-modal-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.room-modal-summary > span:not(.badge) {
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: var(--light);
+}
+
+.room-modal-section {
+    margin: 14px 0;
+}
+
+.room-modal-section h4,
+.selected-room-details h4 {
+    margin: 0 0 8px;
+    color: var(--nav);
+    font-size: 13px;
+}
+
+.room-modal-rates {
+    display: grid;
+    gap: 5px;
+}
+
+.room-modal-rate {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.room-modal-rate b {
+    color: var(--nav);
+}
+
+.room-inclusion-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.room-inclusion {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid var(--teal-border);
+    border-radius: 14px;
+    background: var(--teal-light);
+    color: #14606c;
+    font-size: 12px;
+}
+
+.room-inclusion::before {
+    content: "✓";
+    font-weight: 700;
+}
+
+.selected-room-details {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+}
+
+.selected-room-detail {
+    display: grid;
+    gap: 4px;
+    padding: 9px 0;
+    border-top: 1px solid var(--border);
+}
+
+.selected-room-detail:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.selected-room-detail > span {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.estimate-inclusions {
+    margin: 4px 0 9px;
+    padding-left: 10px;
+    color: #14606c;
+    font-size: 12px;
+}
+
+.estimate-box {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid var(--teal-border);
+    border-radius: 6px;
+    background: var(--teal-light);
+}
+
+.estimate-box h4 {
+    margin: 0 0 8px;
+    color: var(--nav);
+}
+
+.estimate-line {
+    margin: 4px 0;
+}
+
+.estimate-box > strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 15px;
+}
+
+.estimate-box .hint {
+    margin-bottom: 0;
+}
+
+.billing-charge-line {
+    display: grid;
+    grid-template-columns: minmax(120px, .8fr) minmax(180px, 1.5fr) minmax(140px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.invoice {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.invoice-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--border);
+}
+
+.invoice-heading h2 {
+    margin-bottom: 5px;
+}
+
+.invoice-heading p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.invoice-number {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    text-align: right;
+}
+
+.invoice-note {
+    margin-top: 18px;
+}
+
+@media (max-width: 700px) {
+    .billing-charge-line {
+        grid-template-columns: 1fr;
+    }
+
+    .invoice-heading {
+        flex-direction: column;
+    }
+
+    .invoice-number {
+        align-items: flex-start;
+        text-align: left;
+    }
 }
 
 /* =========================================================
@@ -1210,6 +1447,50 @@ tr:hover td {
     border-radius: 6px;
 }
 
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.calendar-toolbar h3 {
+    margin: 0;
+    padding: 8px;
+}
+
+.calendar-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.calendar-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 9px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+.arrival-key {
+    background: #e5f1fc;
+    color: #1f5fa8;
+}
+
+.departure-key {
+    background: #fff0d7;
+    color: #8a5a00;
+}
+
+.calendar-key b {
+    font-size: 14px;
+}
+
 .cal-head {
     padding: 10px;
 
@@ -1226,9 +1507,9 @@ tr:hover td {
 }
 
 .cal-day {
-    min-height: 100px;
+    min-height: 145px;
 
-    padding: 7px;
+    padding: 8px;
 
     border-right: 1px solid var(--border);
     border-top: 1px solid var(--border);
@@ -1238,27 +1519,80 @@ tr:hover td {
     background: #eef8fb;
 }
 
+.cal-day.has-events {
+    background-color: #fbfcfe;
+}
+
+.cal-day.today.has-events {
+    background-color: #eef8fb;
+}
+
 .cal-number {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 5px;
 
     font-weight: 700;
 }
 
+.cal-number small {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 400;
+}
+
 .cal-event {
-    overflow: hidden;
-
-    margin: 2px 0;
-    padding: 3px 5px;
-
-    background: #dcebfa;
-    color: #1f5fa8;
-
-    border-radius: 3px;
-
+    display: grid;
+    gap: 2px;
+    margin: 5px 0;
+    padding: 6px;
+    border-left: 3px solid #1f5fa8;
+    border-radius: 4px;
+    background: #e5f1fc;
+    color: #1f426a;
     font-size: 11px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
 
-    white-space: nowrap;
-    text-overflow: ellipsis;
+.cal-event.departure {
+    border-left-color: #d18a17;
+    background: #fff3dc;
+    color: #6c4b15;
+}
+
+.cal-event > span {
+    font-weight: 600;
+}
+
+.cal-event small {
+    font-size: 10px;
+}
+
+.cal-status {
+    color: var(--muted);
+}
+
+.reservation-details-box {
+    max-width: 720px;
+}
+
+.reservation-details-list {
+    margin: 6px 0 20px;
+}
+
+.reservation-details-list > div {
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.reservation-details-list > div:nth-child(odd) {
+    background: #f6f8fb;
+}
+
+.reservation-details-list dd {
+    overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -1366,6 +1700,25 @@ tr:hover td {
     border-radius: 6px;
 
     text-align: center;
+}
+
+.slip-inclusions {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.slip-inclusions h3 {
+    margin-bottom: 7px;
+}
+
+.slip-inclusions ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 18px;
+    margin: 0;
+    padding-left: 20px;
 }
 
 .slip-room b {
@@ -1545,7 +1898,7 @@ tr:hover td {
     }
 
     .cal-day {
-        min-height: 70px;
+        min-height: 110px;
     }
 
     .rooms {
@@ -1642,6 +1995,17 @@ tr:hover td {
 
     .box {
         box-shadow: none;
+    }
+
+    .invoice .box,
+    .invoice {
+        border: 0;
+        padding: 0;
+    }
+
+    .table-wrap {
+        overflow: visible;
+        border: 0;
     }
 }
 
@@ -2069,3 +2433,7 @@ tr:hover td {
     }
 
 }
+/* check-in step 6: additional rooms for a big group */
+.extra-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0 16px; }
+#roomAdvice { margin-top: 12px; }
+#roomAdvice button { margin-left: 6px; }

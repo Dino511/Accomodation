@@ -267,7 +267,8 @@ class RoomController extends Controller
                 ],
 
                 'rate' => [
-                    'required',
+                    'nullable',
+                    'required_without_all:rate_hourly,rate_daytour',
                     'numeric',
                     'min:0',
                 ],

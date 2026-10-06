@@ -23,18 +23,24 @@
         @else
             <div class="table-wrap">
                 <table>
-                    <tr><th>Guest</th><th>Type</th><th>Company</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>ID</th><th>Charges</th><th>Status</th></tr>
+                    <tr><th>Guest</th><th>Type</th><th>Company</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>ID</th><th>Accommodation</th><th>Additional</th><th>Total</th><th>Paid</th><th>Balance</th><th>Payment</th><th>Status</th><th></th></tr>
                     @foreach ($bookings as $b)
                         <tr>
                             <td>{{ $b->guest_name }}</td>
                             <td>{{ $b->guest_type }}</td>
                             <td>{{ $b->company ?: '—' }}</td>
                             <td>{{ $b->room->room_no }}</td>
-                            <td>{{ $b->check_in->format('M d, Y') }}</td>
-                            <td>{{ $b->actual_check_out ? $b->actual_check_out->format('M d, Y') : '—' }}</td>
+                            <td>{{ $b->billingStart()->format('M d, Y h:i A') }}</td>
+                            <td>{{ $b->checkout_verified_at ? $b->checkout_verified_at->format('M d, Y h:i A') : ($b->actual_check_out ? $b->actual_check_out->format('M d, Y') : '—') }}</td>
                             <td>{{ $b->id_returned ? 'Returned' : ($b->id_surrendered ? 'Held' : '—') }}</td>
-                            <td>{{ $b->charges > 0 ? '₱'.number_format($b->charges, 2) : '—' }}</td>
+                            <td>₱{{ number_format($b->accommodationCharge(), 2) }}</td>
+                            <td>₱{{ number_format($b->additionalChargeTotal(), 2) }}</td>
+                            <td>₱{{ number_format($b->totalAmount(), 2) }}</td>
+                            <td>₱{{ number_format((float) $b->amount_paid, 2) }}</td>
+                            <td>₱{{ number_format($b->balance(), 2) }}</td>
+                            <td>{{ $b->paymentStatus() }}</td>
                             <td><span class="badge {{ $b->badge() }}">{{ $b->status }}</span></td>
+                            <td><a class="btn small" href="/billing/{{ $b->id }}">View bill</a></td>
                         </tr>
                     @endforeach
                 </table>

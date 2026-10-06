@@ -50,10 +50,10 @@
             <h3>Rates</h3>
             <div class="rate-grid">
                 <div>
-                    <label for="rate">Per night <span class="req">*</span></label>
+                    <label for="rate">Per night</label>
                     <div class="input-with-prefix">
                         <span>₱</span>
-                        <input id="rate" name="rate" type="number" min="0" step="0.01" value="{{ old('rate', $room->rate ?? '') }}" placeholder="0.00" required>
+                        <input id="rate" name="rate" type="number" min="0" step="0.01" value="{{ old('rate', $room->rate ?? '') }}" placeholder="0.00">
                     </div>
                 </div>
                 <div>
@@ -71,7 +71,7 @@
                     </div>
                 </div>
             </div>
-            <p class="hint">Leave per hour and day tour empty if the room does not offer them.</p>
+            <p class="hint">Enter the rates this room offers. At least one rate is required; per night, per hour, and day tour can be left empty individually.</p>
         </div>
 
         <div class="box">

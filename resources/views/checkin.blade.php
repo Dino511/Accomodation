@@ -30,7 +30,7 @@
                         value="{{ $r->id }}"
                         {{ optional($selected)->id == $r->id ? 'selected' : '' }}
                     >
-                        {{ $r->guest_name }} — {{ $r->room->room_no }} — {{ $r->check_in->format('M d, Y') }}
+                        {{ $r->guest_name }} — {{ $r->room->room_no }} — {{ $r->check_in->format('M d, Y') }} — {{ $r->room->rateSummary() }}
                     </option>
                 @endforeach
             </select>
@@ -282,6 +282,19 @@
                 <h3>Assign accommodation (Guest Villa / Barracks)</h3>
             </div>
 
+            <label for="billing_rate_type">Rate type <span class="req">*</span></label>
+            <select
+                id="billing_rate_type"
+                name="billing_rate_type"
+                data-start-at="{{ $selected ? $selected->check_in->format('Y-m-d').'T'.substr($selected->check_in_time ?: '14:00', 0, 5) : now()->format('Y-m-d\TH:i') }}"
+                required
+            >
+                @foreach (['nightly' => 'Per night', 'hourly' => 'Per hour', 'daytour' => 'Day tour'] as $value => $label)
+                    <option value="{{ $value }}" @selected(old('billing_rate_type', 'nightly') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+            <p class="hint">Choose the rate that applies to this stay. Every room assigned to the group must offer this rate.</p>
+
             <label for="room_id">
                 Room <span class="req">*</span>
             </label>
@@ -294,14 +307,64 @@
                         @foreach ($list as $room)
                             <option
                                 value="{{ $room->id }}"
+                                data-name="{{ $room->room_no }}"
+                                data-capacity="{{ $room->capacity }}"
+                                data-rate-nightly="{{ $room->rate ?? '' }}"
+                                data-rate-hourly="{{ $room->rate_hourly ?? '' }}"
+                                data-rate-daytour="{{ $room->rate_daytour ?? '' }}"
+                                data-inclusions="{{ json_encode($room->inclusionsList()) }}"
+                                data-location="{{ $room->location->name }}"
+                                data-location="{{ $room->location->name }}"
                                 {{ old('room_id', optional($selected)->room_id) == $room->id ? 'selected' : '' }}
                             >
-                                {{ $room->room_no }} (good for {{ $room->capacity }})
+                                {{ $room->room_no }} (good for {{ $room->capacity }}) — {{ $room->rateSummary() }}
                             </option>
                         @endforeach
                     </optgroup>
                 @endforeach
             </select>
+
+            {{-- shown when the group does not fit in the room: what is wrong and which rooms to add --}}
+            <div id="roomAdvice" class="alert" role="alert" hidden></div>
+
+            {{-- more rooms for the same group --}}
+            <div id="extraRoomsBox" hidden>
+                <label>Additional rooms for this group</label>
+
+                <div class="extra-rooms">
+                    @foreach ($rooms as $room)
+                        <label class="check" data-extra="{{ $room->id }}">
+                            <input
+                                type="checkbox"
+                                name="extra_rooms[]"
+                                value="{{ $room->id }}"
+                                data-capacity="{{ $room->capacity }}"
+                                data-name="{{ $room->room_no }}"
+                                data-rate-nightly="{{ $room->rate ?? '' }}"
+                                data-rate-hourly="{{ $room->rate_hourly ?? '' }}"
+                                data-rate-daytour="{{ $room->rate_daytour ?? '' }}"
+                                data-inclusions="{{ json_encode($room->inclusionsList()) }}"
+                                {{ in_array($room->id, old('extra_rooms', [])) ? 'checked' : '' }}
+                            >
+                            {{ $room->room_no }} · {{ $room->location->name }} (good for {{ $room->capacity }}) — {{ $room->rateSummary() }}
+                        </label>
+                    @endforeach
+                </div>
+
+                <p class="hint">Guests fill the first room, then the next. Each room gets its own record and room slip.</p>
+            </div>
+
+            <div id="selectedRoomDetails" class="selected-room-details" hidden>
+                <h4>Room details</h4>
+                <div id="selectedRoomDetailItems"></div>
+            </div>
+
+            <div id="estimatedCost" class="estimate-box" aria-live="polite">
+                <h4>Estimated accommodation cost</h4>
+                <div id="estimatedCostLines"></div>
+                <strong id="estimatedCostTotal">Select a rate and room to see the estimate.</strong>
+                <p class="hint">Estimate only; final charges can change during the stay.</p>
+            </div>
 
             <p class="hint">
                 Only rooms that are Available are listed.
@@ -448,6 +511,240 @@
 
         guestCount.addEventListener('input', showGuestList);
         showGuestList();
+
+        // ---- Step 6: the group must fit in the chosen rooms ----
+        const roomSelect = document.getElementById('room_id');
+        const rateType = document.getElementById('billing_rate_type');
+        const roomAdvice = document.getElementById('roomAdvice');
+        const extraBox = document.getElementById('extraRoomsBox');
+        const extraChecks = Array.from(extraBox.querySelectorAll('input[type=checkbox]'));
+        const checkOutDate = document.getElementById('check_out_date');
+        const checkOutTime = document.getElementById('check_out_time');
+        const estimateLines = document.getElementById('estimatedCostLines');
+        const estimateTotal = document.getElementById('estimatedCostTotal');
+        const selectedRoomDetails = document.getElementById('selectedRoomDetails');
+        const selectedRoomDetailItems = document.getElementById('selectedRoomDetailItems');
+
+        function inclusionsFor(element) {
+            try {
+                return JSON.parse(element.dataset.inclusions || '[]');
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function rateAttribute(element) {
+            return element.dataset['rate' + rateType.value.charAt(0).toUpperCase() + rateType.value.slice(1)];
+        }
+
+        function supportsSelectedRate(element) {
+            return rateAttribute(element) !== undefined && rateAttribute(element) !== '';
+        }
+
+        function applyRateAvailability() {
+            Array.from(roomSelect.options).forEach(function (option) {
+                if (option.value !== '') {
+                    option.disabled = ! supportsSelectedRate(option);
+                    if (option.disabled && option.selected) {
+                        roomSelect.value = '';
+                    }
+                }
+            });
+
+            extraChecks.forEach(function (box) {
+                const available = supportsSelectedRate(box);
+                box.disabled = ! available;
+                box.closest('label').hidden = ! available;
+                if (! available) {
+                    box.checked = false;
+                }
+            });
+        }
+
+        function updateEstimate() {
+            estimateLines.innerHTML = '';
+            selectedRoomDetailItems.innerHTML = '';
+            const start = new Date(rateType.dataset.startAt);
+            const end = new Date(checkOutDate.value + 'T' + checkOutTime.value);
+            let units = 0;
+
+            if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+                estimateTotal.textContent = 'Enter a valid check-out date and time.';
+                return;
+            }
+
+            if (rateType.value === 'hourly') {
+                units = Math.max(1, Math.ceil((end - start) / 3600000));
+            } else {
+                const startDay = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+                const endDay = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+                const days = Math.floor((endDay - startDay) / 86400000);
+                units = rateType.value === 'daytour' ? Math.max(1, days + 1) : Math.max(1, days);
+            }
+
+            const selectedRooms = [];
+            const mainOption = roomSelect.selectedOptions[0];
+            if (mainOption && mainOption.value && supportsSelectedRate(mainOption)) {
+                selectedRooms.push(mainOption);
+            }
+            extraChecks.forEach(function (box) {
+                if (box.checked && supportsSelectedRate(box)) {
+                    selectedRooms.push(box);
+                }
+            });
+
+            if (selectedRooms.length === 0) {
+                selectedRoomDetails.hidden = true;
+                estimateTotal.textContent = 'Select a rate and room to see the estimate.';
+                return;
+            }
+
+            selectedRoomDetails.hidden = false;
+            let total = 0;
+            selectedRooms.forEach(function (room) {
+                const amount = Number(rateAttribute(room)) * units;
+                total += amount;
+
+                const detail = document.createElement('div');
+                detail.className = 'selected-room-detail';
+                const title = document.createElement('b');
+                title.textContent = room.dataset.name + (room.dataset.location ? ' — ' + room.dataset.location : '');
+                const capacity = document.createElement('span');
+                capacity.textContent = 'Capacity: ' + room.dataset.capacity + ' guests';
+                const selectedRate = document.createElement('span');
+                selectedRate.textContent = '₱' + Number(rateAttribute(room)).toFixed(2) + ' / '
+                    + (rateType.value === 'hourly' ? 'hour' : rateType.value === 'daytour' ? 'day tour' : 'night');
+                const includes = document.createElement('span');
+                const roomInclusions = inclusionsFor(room);
+                includes.textContent = roomInclusions.length ? 'Inclusions: ' + roomInclusions.join(' · ') : 'No inclusions listed';
+                detail.append(title, capacity, selectedRate, includes);
+                selectedRoomDetailItems.appendChild(detail);
+
+                const line = document.createElement('p');
+                line.className = 'estimate-line';
+                line.textContent = room.dataset.name + ' — ₱' + Number(rateAttribute(room)).toFixed(2)
+                    + ' × ' + units + ' ' + (rateType.value === 'hourly' ? 'hour(s)' : rateType.value === 'daytour' ? 'day(s)' : 'night(s)')
+                    + ' = ₱' + amount.toFixed(2);
+                estimateLines.appendChild(line);
+
+                if (roomInclusions.length) {
+                    const included = document.createElement('p');
+                    included.className = 'estimate-inclusions';
+                    included.textContent = room.dataset.name + ' includes: ' + roomInclusions.join(', ');
+                    estimateLines.appendChild(included);
+                }
+            });
+
+            estimateTotal.textContent = 'Estimated total: ₱' + total.toFixed(2);
+        }
+
+        // which rooms to add so everyone has a bed: the smallest room that covers
+        // the rest, or else the biggest rooms first. null = not enough rooms.
+        function suggestExtras(need, free) {
+            const picked = [];
+
+            while (need > 0) {
+                const left = free.filter(function (box) { return ! picked.includes(box); });
+                const fits = left.filter(function (box) { return Number(box.dataset.capacity) >= need; })
+                    .sort(function (a, b) { return a.dataset.capacity - b.dataset.capacity; })[0];
+                const next = fits || left.sort(function (a, b) { return b.dataset.capacity - a.dataset.capacity; })[0];
+
+                if (! next) {
+                    return null;
+                }
+
+                picked.push(next);
+                need -= Number(next.dataset.capacity);
+            }
+
+            return picked;
+        }
+
+        function checkRooms() {
+            const guestsCount = parseInt(guestCount.value) || 1;
+            const main = roomSelect.selectedOptions[0];
+            const mainId = roomSelect.value;
+
+            // the main room cannot also be an additional room
+            extraChecks.forEach(function (box) {
+                const same = box.value === mainId;
+                box.closest('label').hidden = same || box.disabled;
+                if (same) { box.checked = false; }
+            });
+
+            roomSelect.setCustomValidity('');
+            roomAdvice.hidden = true;
+
+            if (! mainId) {
+                extraBox.hidden = true;
+                updateEstimate();
+                return;
+            }
+
+            const mainBox = extraChecks.find(function (box) { return box.value === mainId; });
+            const mainCapacity = Number(mainBox.dataset.capacity);
+            const ticked = extraChecks.filter(function (box) { return box.checked; });
+            const total = mainCapacity + ticked.reduce(function (sum, box) { return sum + Number(box.dataset.capacity); }, 0);
+
+            extraBox.hidden = guestsCount <= mainCapacity && ticked.length === 0;
+
+            if (total >= guestsCount) {
+                if (ticked.length > 0) {
+                    roomAdvice.className = 'alert success';
+                    roomAdvice.textContent = (ticked.length + 1) + ' rooms for ' + guestsCount + ' guests: '
+                        + [mainBox].concat(ticked).map(function (box) { return box.dataset.name; }).join(' + ') + '.';
+                    roomAdvice.hidden = false;
+                }
+                updateEstimate();
+                return;
+            }
+
+            // not enough room: refuse and suggest
+            const names = [mainBox].concat(ticked).map(function (box) { return box.dataset.name; }).join(' + ');
+            const free = extraChecks.filter(function (box) {
+                return box.value !== mainId && ! box.checked && ! box.disabled;
+            });
+            const suggestion = suggestExtras(guestsCount - total, free);
+
+            roomSelect.setCustomValidity('These rooms cannot take all ' + guestsCount + ' guests.');
+            roomAdvice.className = 'alert error';
+            roomAdvice.innerHTML = '';
+            roomAdvice.append(names + ' is good for ' + total + ' only, but there are ' + guestsCount + ' guests. '
+                + (guestsCount - total) + ' more ' + (guestsCount - total === 1 ? 'guest needs' : 'guests need') + ' a room. ');
+
+            if (suggestion) {
+                roomAdvice.append('Suggested: add ' + suggestion.map(function (box) {
+                    return box.dataset.name + ' (good for ' + box.dataset.capacity + ')';
+                }).join(' + ') + ', ' + (ticked.length + 1 + suggestion.length) + ' rooms in total. ');
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'small';
+                button.textContent = 'Add suggested ' + (suggestion.length === 1 ? 'room' : 'rooms');
+                button.addEventListener('click', function () {
+                    suggestion.forEach(function (box) { box.checked = true; });
+                    checkRooms();
+                });
+                roomAdvice.append(button);
+            } else {
+                roomAdvice.append('There are not enough available rooms for the whole group right now.');
+            }
+
+            roomAdvice.hidden = false;
+            updateEstimate();
+        }
+
+        roomSelect.addEventListener('change', checkRooms);
+        rateType.addEventListener('change', function () {
+            applyRateAvailability();
+            checkRooms();
+        });
+        guestCount.addEventListener('input', checkRooms);
+        extraChecks.forEach(function (box) { box.addEventListener('change', checkRooms); });
+        checkOutDate.addEventListener('change', updateEstimate);
+        checkOutTime.addEventListener('change', updateEstimate);
+        applyRateAvailability();
+        checkRooms();
 
         // ---- One step on screen at a time (steps 3 to 6) ----
         const form = document.getElementById('checkinForm');

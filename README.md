@@ -1,6 +1,6 @@
 # Guest Accommodation – Simple Reception (demo version)
 
-**Last updated:** 5 October 2026
+**Last updated:** 6 October 2026
 
 Read this first if you are an AI assistant or a person continuing this project.
 
@@ -26,11 +26,15 @@ The owner supplied the company's printed "Guest Accommodation Check-in & Check-o
 - **One step on screen at a time (5 October 2026):** `/checkin` is still one form with one save, but plain JavaScript at the bottom of `checkin.blade.php` shows only the current step's box (3, 4, 5 or 6) with **Back / Next step** buttons; **Complete check-in** appears on step 6. A step in the bar turns green with a tick once its fields are complete, and clicking a step opens it (going forward is refused until the earlier steps are complete). After a refused save the page opens on the step that needs fixing. With JavaScript off, all steps show on one page as before.
 - The check-in is refused unless verification is ticked, the ID is recorded and surrendered, and a room is assigned.
 
-**Check-out (8 steps):** 1 Guest/contractor reports to reception → 2 Check-out verification → 3 Room/barracks inspection → 4 Check for damages/unpaid charges → 5 Settle charges if applicable → 6 Return surrendered ID → 7 Record check-out in guest log → 8 Guest leaves facility.
+**Check-out (8 steps):** 1 Guest/contractor reports to reception → 2 Check-out verification → 3 Room/barracks inspection → 4 Record extra services, damages or other charges → 5 Review bill and record payments → 6 Return surrendered ID → 7 Record check-out in guest log → 8 Guest leaves facility.
 
 - Built as one page per guest, `/checkout/{id}`, with the step bar and one box per step. Only the current step shows its form; later steps are greyed out, finished ones show a tick. `bookings.checkout_step` stores the last finished step, and **steps cannot be skipped** (each action checks the step).
 - Step 2 (check-out verification) has **no tick box** (removed 5 October 2026): the page shows the guest and room, and the **Confirm and continue** button is the confirmation. The two tick boxes on the check-in page stay, because that page has one save button for all its steps.
-- If the charges are 0, step 5 is skipped automatically.
+- Check-in step 6 lets reception select per night, per hour or day tour. The estimate updates when dates, rate type or rooms change. Hourly use rounds up started hours; nightly uses date differences (minimum one night); day tour counts calendar dates inclusively. Each room in a multi-room group must offer the selected rate.
+- Room cards on the reception dashboard show configured rates and compact inclusions. Selecting a card opens room details, rates and inclusions before offering an allowed status change; rooms with a current guest also link to that guest's check-out. Check-in and reservation room selectors show room details and inclusions, and the printable assignment slip lists the selected room's rates, capacity and inclusions.
+- Reservation details open in an in-page modal (not a browser alert). The reception calendar shows reservation/arrival and expected checkout entries with guest name, room, scheduled time and booking status for each day.
+- Checkout captures the check-out verification time for billing, itemizes extra service, damage and other charges, and calculates accommodation from the selected rate snapshot. Reception can record partial payments, but the remaining balance must be paid before the ID can be returned. A printable bill is available from reservation, checkout and Guest Log screens. Billing data does not control room-status changes.
+- If the full bill is 0, the payment step is skipped automatically.
 - The **Guest Log** page (`/reports`) is the record for step 7.
 
 **Room status flow:** Occupied → Check-out → Inspection → Cleaning / Maintenance → Available.
@@ -48,12 +52,22 @@ There are two roles, stored in `users.role`: **admin** and **reception**.
 - **Admin** sets things up: Admin Dashboard (`/admin`), **Locations** (`/admin/locations`), the **Rooms** inside each location (`/rooms`) and the **Accounts** of reception staff (`/admin/users`). The admin does **not** see or open the front-desk pages; they are sent to `/admin` (`app/Http/Middleware/ReceptionOnly.php`).
 - **Reception** only sees the front desk (dashboard, check-in, check-out, reservations, calendar, guest log). Opening an admin page sends them back to the dashboard with a message (`app/Http/Middleware/AdminOnly.php`).
 - **Logic:** the admin adds a location first, then adds rooms to it. Every room belongs to one location (`rooms.location_id` → `locations`). A location with rooms cannot be deleted; a room with reservations cannot be deleted.
-- **Room form** (`resources/views/rooms/form.blade.php`, used for both add and edit; reworked 5 October 2026): room no, location, capacity, status; three rates, **per night** (required), **per hour** and **day tour** (both optional: `rooms.rate`, `rate_hourly`, `rate_daytour`); and a list of **inclusions** (TV, Wi-Fi…) that a few lines of JavaScript save as JSON text in `rooms.inclusions`. An inclusion typed but not yet added is still saved on submit. The form extends `layout` like every other page (it used to extend a missing `layouts.app`, which gave a 500 error).
+- **Room form** (`resources/views/rooms/form.blade.php`, used for both add and edit): room no, location, capacity, status; three independently optional rates, **per night**, **per hour** and **day tour** (`rooms.rate`, `rate_hourly`, `rate_daytour`). At least one rate must be set. Reception sees each room's configured rates on the dashboard and when assigning a room for check-in or a reservation. The form also has a list of **inclusions** (TV, Wi-Fi…) that a few lines of JavaScript save as JSON text in `rooms.inclusions`. An inclusion typed but not yet added is still saved on submit. The form extends `layout` like every other page (it used to extend a missing `layouts.app`, which gave a 500 error).
+- **Room billing** (6 October 2026): each stay stores the chosen rate type and rate amount at check-in, so later admin rate edits do not change its bill. Check-in shows a live estimated accommodation total for selected rooms and duration. Final billing adds any inspection charges, records amount paid and balance, and shows Unpaid, Partially Paid or Paid. `/billing/{booking}` is a printable estimate/invoice; the Guest Log and CSV include the billing totals. Run `php artisan migrate` after updating to add the billing fields.
 - **Accounts:** the admin creates accounts (name, email, role, password of at least 8 characters), edits them, sets a new password, and deactivates or reactivates them (`users.active`). A deactivated account cannot log in. The admin cannot deactivate themselves or remove their own admin role.
 - **Passwords (changed 5 October 2026): the admin never sets or sees a password.** Creating an account asks only for name, email and role; the account gets a random password and the user is emailed a link to set their own (`/reset-password/{token}`, valid 60 minutes). The admin can resend it with **Send password link** in the accounts list, and anyone can use **Forgot password?** on the login page (`/forgot-password`). This is Laravel's built-in password reset (`Password::sendResetLink`, table `password_reset_tokens`); the methods are in `AuthController` and `UserController::sendLink`, and the email text is in `AppServiceProvider`.
 - **Email is not really sent yet:** `.env` has `MAIL_MAILER=log`, so the email (with the link) is written to `storage/logs/laravel.log`. To send real emails, put the SMTP details of a mail account in the `MAIL_*` lines of `.env`.
 - Demo logins: `admin@example.com` / `password` and `reception@example.com` / `password` (sample data only).
 - Files: `LocationController`, `UserController`, `RoomController` (`admin()` = admin home), `Location` model, views in `resources/views/admin/` and `resources/views/rooms/`.
+
+## 1c. Groups bigger than one room (added 5 October 2026)
+
+At check-in, the number of guests must fit in the chosen rooms.
+
+- If the group is bigger than the room (for example 10 guests, room good for 8), **the check-in is refused** and the system **suggests available rooms**: one room that fits everyone if there is one, otherwise the chosen room plus the fewest other available rooms (e.g. "A-101 (good for 8) + A-104 (good for 4), 2 rooms in total").
+- Step 6 of /checkin shows this live: a red message with the suggestion and an **Add suggested room** button, plus an "Additional rooms for this group" tick list. The Complete button is blocked until the rooms can take everyone. The server checks again (ReceptionController::checkin, suggestRooms(), 
+otEnoughRoomMessage()).
+- Saving with several rooms creates **one booking record per room** (a booking still has one room). Guests fill the first room, then the next; the first guest in each room is the name on that record, and the remarks say "Group of 10 with <main guest> (A-101, A-104)". The ID is held once, under the main guest. Each room is then checked out on its own.
 
 ## 2. The goal (keep to this)
 

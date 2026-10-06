@@ -63,4 +63,54 @@ class Room extends Model
             'Maintenance' => 'maintenance',
         ][$this->status] ?? 'clean';
     }
+
+    public function rateSummary(): string
+    {
+        $configured = [];
+
+        foreach ($this->rates() as $label => $rate) {
+            $configured[] = $label.': ₱'.number_format((float) $rate, 2);
+        }
+
+        return $configured ? implode(' · ', $configured) : 'No rates set';
+    }
+
+    public function rates(): array
+    {
+        $rates = [
+            'Per night' => $this->rate,
+            'Per hour' => $this->rate_hourly,
+            'Day tour' => $this->rate_daytour,
+        ];
+
+        $configured = [];
+
+        foreach ($rates as $label => $rate) {
+            if ($rate !== null && $rate !== '') {
+                $configured[$label] = $rate;
+            }
+        }
+
+        return $configured;
+    }
+
+    public function inclusionsList(): array
+    {
+        $value = $this->inclusions;
+
+        if (! is_string($value) || trim($value) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        $items = is_array($decoded)
+            ? $decoded
+            : preg_split('/[\r\n,]+/', $value);
+
+        return array_values(array_unique(array_filter(
+            array_map(fn ($item) => trim((string) $item), $items),
+            fn ($item) => $item !== ''
+        )));
+    }
 }

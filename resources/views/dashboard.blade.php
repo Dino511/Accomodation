@@ -295,7 +295,12 @@ ROOMS
                     {{ $room->id }},
                     @js($room->room_no),
                     @js($room->status),
-                    {{ $guest ? $guest->id : 'null' }}
+                    {{ $guest ? $guest->id : 'null' }},
+                    @js($room->location->name),
+                    {{ $room->capacity }},
+                    @js($room->rates()),
+                    @js($room->inclusionsList()),
+                    @js($guest ? $guest->guest_name : null)
                 )"
             >
 
@@ -313,6 +318,22 @@ ROOMS
                         : 'Good for '.$room->capacity
                     }}
                 </small>
+
+                <div class="room-rates" aria-label="Room rates">
+                    <span class="room-rates-title">Rates</span>
+                    @forelse ($room->rates() as $label => $rate)
+                        <span class="room-rate">
+                            <span>{{ $label }}</span>
+                            <b>₱{{ number_format((float) $rate, 2) }}</b>
+                        </span>
+                    @empty
+                        <span class="room-rate">No rates set</span>
+                    @endforelse
+                </div>
+
+                @if ($room->inclusionsList())
+                    <small class="room-card-inclusions">{{ implode(' · ', $room->inclusionsList()) }}</small>
+                @endif
 
             </button>
 
@@ -552,109 +573,139 @@ $attentionRooms = $rooms->whereIn('status', [
 @endif
 
 {{-- =====================================================
-CHANGE ROOM STATUS MODAL
+ROOM DETAILS AND STATUS MODAL
 ===================================================== --}}
 
 <div class="modal" id="roomModal">
-<div class="modal-box" style="max-width:400px">
-
-    <div class="modal-header">
-
-        <h3 style="margin:0" id="roomTitle">
-            Room
-        </h3>
-
-        <button
-            class="close"
-            type="button"
-            aria-label="Close"
-            onclick="
-                document
-                    .getElementById('roomModal')
-                    .classList
-                    .remove('show')
-            "
-        >
-            ×
-        </button>
-
-    </div>
-
-    <p id="roomInfo"></p>
-
-    <form method="POST" id="roomForm">
-
-        @csrf
-
-        <label for="roomStatus">
-            Change status to
-        </label>
-
-        <select name="status" id="roomStatus">
-
-            <option value="Available">
-                Available (ready for guests)
-            </option>
-
-            <option value="Cleaning">
-                Cleaning
-            </option>
-
-            <option value="Maintenance">
-                Maintenance
-            </option>
-
-        </select>
-
-        <br><br>
-
-        <div class="actions">
-
-            <button
-                type="submit"
-                class="primary"
-            >
-                Save
-            </button>
-
-            <button
-                type="button"
-                onclick="
-                    document
-                        .getElementById('roomModal')
-                        .classList
-                        .remove('show')
-                "
-            >
-                Cancel
-            </button>
-
+    <div class="modal-box room-modal-box">
+        <div class="modal-header">
+            <div>
+                <h3 id="roomTitle">Room</h3>
+                <p id="roomLocation" class="muted"></p>
+            </div>
+            <button class="close" type="button" aria-label="Close" onclick="closeRoomModal()">×</button>
         </div>
 
-    </form>
+        <div class="room-modal-summary">
+            <span id="roomStatusBadge" class="badge"></span>
+            <span id="roomCapacity"></span>
+            <span id="roomGuest"></span>
+        </div>
 
+        <div class="room-modal-section">
+            <h4>Rates</h4>
+            <div id="roomModalRates" class="room-modal-rates"></div>
+        </div>
+
+        <div class="room-modal-section">
+            <h4>Inclusions</h4>
+            <div id="roomModalInclusions" class="room-inclusion-list"></div>
+        </div>
+
+        <a id="roomCheckoutLink" class="btn primary" hidden>Open guest check-out</a>
+
+        <form method="POST" id="roomForm">
+            @csrf
+            <label for="roomStatus">Change status to</label>
+            <select name="status" id="roomStatus">
+                <option value="Available">Available (ready for guests)</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Maintenance">Maintenance</option>
+            </select>
+            <p id="roomStatusHint" class="hint"></p>
+            <div class="actions">
+                <button type="submit" class="primary" id="roomStatusSave">Save status</button>
+                <button type="button" onclick="closeRoomModal()">Close</button>
+            </div>
+        </form>
+    </div>
 </div>
 
-</div> <script> function roomClicked(id, name, status, bookingId) {
-    // A room with a guest opens the check-out process.
-    if (bookingId) {
-        location.href = '/checkout/' + bookingId;
-        return;
+<script>
+    function closeRoomModal() {
+        document.getElementById('roomModal').classList.remove('show');
     }
 
-    document.getElementById('roomTitle').textContent = name;
+    function roomClicked(id, name, status, bookingId, locationName, capacity, rates, inclusions, guestName) {
+        const modal = document.getElementById('roomModal');
+        const badge = document.getElementById('roomStatusBadge');
+        const rateList = document.getElementById('roomModalRates');
+        const inclusionList = document.getElementById('roomModalInclusions');
+        const form = document.getElementById('roomForm');
+        const statusSelect = document.getElementById('roomStatus');
+        const saveButton = document.getElementById('roomStatusSave');
+        const statusHint = document.getElementById('roomStatusHint');
+        const checkoutLink = document.getElementById('roomCheckoutLink');
 
-    document.getElementById('roomInfo').textContent =
-        'Current status: ' + status;
+        document.getElementById('roomTitle').textContent = name;
+        document.getElementById('roomLocation').textContent = locationName;
+        document.getElementById('roomCapacity').textContent = 'Good for ' + capacity + ' guests';
+        document.getElementById('roomGuest').textContent = guestName ? 'Guest: ' + guestName : '';
+        badge.textContent = status;
+        badge.className = 'badge ' + ({
+            'Available': 'free',
+            'Occupied': 'used',
+            'Check-out': 'checkout',
+            'Inspection': 'inspection',
+            'Cleaning': 'clean',
+            'Maintenance': 'maintenance'
+        }[status] || 'clean');
 
-    document.getElementById('roomForm').action =
-        '/rooms/' + id + '/status';
+        rateList.replaceChildren();
+        const rateEntries = Object.entries(rates || {});
+        if (rateEntries.length === 0) {
+            const empty = document.createElement('span');
+            empty.className = 'muted';
+            empty.textContent = 'No rates set';
+            rateList.appendChild(empty);
+        } else {
+            rateEntries.forEach(function ([label, amount]) {
+                const row = document.createElement('div');
+                row.className = 'room-modal-rate';
+                const rateLabel = document.createElement('span');
+                rateLabel.textContent = label;
+                const rateAmount = document.createElement('b');
+                rateAmount.textContent = '₱' + Number(amount).toLocaleString('en-PH', {minimumFractionDigits: 2});
+                row.append(rateLabel, rateAmount);
+                rateList.appendChild(row);
+            });
+        }
 
-    document
-        .getElementById('roomModal')
-        .classList
-        .add('show');
-}
+        inclusionList.replaceChildren();
+        if (!inclusions || inclusions.length === 0) {
+            const empty = document.createElement('span');
+            empty.className = 'muted';
+            empty.textContent = 'No inclusions listed';
+            inclusionList.appendChild(empty);
+        } else {
+            inclusions.forEach(function (item) {
+                const tag = document.createElement('span');
+                tag.className = 'room-inclusion';
+                tag.textContent = item;
+                inclusionList.appendChild(tag);
+            });
+        }
 
+        form.action = '/rooms/' + id + '/status';
+        checkoutLink.href = '/checkout/' + bookingId;
+        checkoutLink.hidden = !bookingId;
+        const statusManagedByCheckout = bookingId || ['Occupied', 'Check-out', 'Inspection'].includes(status);
+        if (['Available', 'Cleaning', 'Maintenance'].includes(status)) {
+            statusSelect.value = status;
+        }
+        statusSelect.disabled = statusManagedByCheckout;
+        saveButton.hidden = statusManagedByCheckout;
+        statusHint.textContent = statusManagedByCheckout
+            ? 'Room status is managed by the check-in and check-out process.'
+            : 'Update the room status when its condition changes.';
+
+        modal.classList.add('show');
+    }
+
+    document.getElementById('roomModal').addEventListener('click', function (event) {
+        if (event.target === this) {
+            closeRoomModal();
+        }
+    });
 </script>
 @endsection

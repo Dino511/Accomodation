@@ -79,15 +79,16 @@
         @else
             <div class="table-wrap">
                 <table>
-                    <tr><th>Guest</th><th>Room</th><th>Check-in</th><th>Checked out</th><th>Charges</th><th></th></tr>
+                    <tr><th>Guest</th><th>Room</th><th>Check-in</th><th>Checked out</th><th>Bill total</th><th>Payment</th><th></th></tr>
                     @foreach ($history as $b)
                         <tr>
                             <td>{{ $b->guest_name }}</td>
                             <td>{{ $b->room->room_no }}</td>
                             <td>{{ $b->check_in->format('M d, Y') }}</td>
                             <td>{{ ($b->actual_check_out ?? $b->check_out)->format('M d, Y') }}</td>
-                            <td>{{ $b->charges > 0 ? '₱'.number_format($b->charges, 2) : 'None' }}</td>
-                            <td><a class="btn small" href="/checkout/{{ $b->id }}">View</a></td>
+                            <td>₱{{ number_format($b->totalAmount(), 2) }}</td>
+                            <td>{{ $b->paymentStatus() }}</td>
+                            <td><a class="btn small" href="/billing/{{ $b->id }}">View bill</a></td>
                         </tr>
                     @endforeach
                 </table>

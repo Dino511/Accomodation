@@ -24,13 +24,13 @@
         @else
             <div class="table-wrap">
                 <table>
-                    <tr><th>Location</th><th>Room No</th><th>Capacity</th><th>Rate</th><th>Status</th><th>Actions</th></tr>
+                    <tr><th>Location</th><th>Room No</th><th>Capacity</th><th>Rates</th><th>Status</th><th>Actions</th></tr>
                     @foreach ($rooms as $room)
                         <tr>
                             <td>{{ $room->location->name }}</td>
                             <td><b>{{ $room->room_no }}</b></td>
                             <td>{{ $room->capacity }}</td>
-                            <td>₱{{ number_format($room->rate, 2) }}</td>
+                            <td>{{ $room->rateSummary() }}</td>
                             <td><span class="badge {{ $room->css() }}">{{ $room->status }}</span></td>
                             <td>
                                 <div class="actions">

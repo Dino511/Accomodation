@@ -71,5 +71,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/calendar', [ReceptionController::class, 'calendar']);
         Route::get('/reports', [ReceptionController::class, 'reports']);
         Route::get('/reports/export', [ReceptionController::class, 'export']);
+        Route::get('/billing/{booking}', [ReceptionController::class, 'bill']);
     });
 });
