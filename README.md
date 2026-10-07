@@ -77,12 +77,12 @@ otEnoughRoomMessage()).
 
 **Do not add:** React, Vue, Inertia, Tailwind, Livewire, npm build steps, charts, animations, dark mode, a design system, roles and permissions, notifications, or advanced validation. If a feature would look impressive, it probably does not belong here.
 
-**The look to keep:** the design in `C:\Users\Temp\Documents\GitHub\reception-preview-static\index.html` (the owner's reference page): soft dark slate-blue sidebar `#26364d` with a teal marker on the current page (5 October 2026: the bright navy was too strong and a white sidebar was too glaring), light grey background, white boxes, bordered tables, Bootstrap-3-style blue/green/red buttons, small coloured status badges.
+**The look to keep:** the design in `docs/design-reference.html` (the owner's reference page): soft dark slate-blue sidebar `#26364d` with a teal marker on the current page (5 October 2026: the bright navy was too strong and a white sidebar was too glaring), light grey background, white boxes, bordered tables, Bootstrap-3-style blue/green/red buttons, small coloured status badges.
 
 ## 3. How to run it
 
 ```powershell
-cd C:\Users\Temp\Documents\GitHub\reception-preview
+cd C:\Users\Temp\Documents\GitHub\Accomodation
 php artisan serve --host=127.0.0.1 --port=8090
 ```
 
@@ -129,12 +129,14 @@ The seeder creates the login above, 7 rooms and 2 sample bookings. **The guest n
 | --- | --- | --- |
 | Login | `/login` | Simple email and password login |
 | Dashboard | `/dashboard` | 6 counts (total rooms, occupied, available, cleaning, arrivals today, departures today); room cards with a coloured left edge; click a room to change its status (an occupied room shows who is in it); today's arrivals and departures |
-| Reservations | `/bookings` | List with search (guest, company, room) and status filter; **+ New reservation** opens a pop-up form; per row: Check-in, Cancel, Check-out, View, Delete |
+| Reservations | `/bookings` | **Reservations only (7 October 2026):** shows Reserved bookings by default, with a filter for Cancelled or both. Search (guest, company, room); **+ New reservation** opens a pop-up form; per row: Check in, Cancel, Estimate, View, Delete. Once a guest is checked in, the record leaves this page and appears on Check-out |
 | Check-in | `/checkin` | Pick a reservation (fills the form) or leave it empty for a walk-in; room, guest, company, contact, valid ID type and number, number of guests, notes; list of guests currently checked in |
-| Check-out | `/checkout` | Pick the guest, choose the room condition (clean, needs cleaning, maintenance required), final notes; list of past check-outs |
+| Check-out | `/checkout` | **Every stay that has checked in (7 October 2026):** overdue / due today / upcoming counts, then "Guests in house" (Checked In, Checking Out; the soonest expected check-out first), then "Checked out". The search box and the sort box sit on top of the **Checked out** table and only affect it (most recent first by default; also oldest first, guest name, room). Opening a guest starts the 8-step check-out (`/checkout/{id}`) |
 | Calendar | `/calendar` | Month view showing "IN: name" and "OUT: name" on each day; Previous, Today, Next |
 | Reports | `/reports` | 4 totals, room utilization table, reservation history, **Export Reservations CSV** |
 | Rooms | `/rooms` | Add, edit and delete rooms (a room with reservations cannot be deleted) |
+
+**Paging (7 October 2026):** the long tables show **5 rows per page** with **Previous / Next** buttons underneath: Reservations, "Currently checked in" on Check-in, "Checked out" on Check-out, and the Guest Log. The number is `Booking::PER_PAGE`; the buttons are `partials/pager.blade.php`, used as `{{ $rows->links('partials.pager') }}` after a `->paginate(Booking::PER_PAGE)` query. The buttons are hidden when there are 5 rows or fewer. "Guests in house" and the dashboard tables are not paged, so an overdue guest is never hidden on page 2.
 
 Rules the code enforces (kept deliberately basic):
 
@@ -191,4 +193,4 @@ These are left out on purpose, so the project looks in progress. Add them only i
 3. **Never change the real system** in `Guest-Accommodation-System-` or its database `guest_accommodation` while working here.
 4. **Give commands for Windows PowerShell 5.1** (no `&&`; use `;`).
 5. After a change, open the page in the browser and try it. If a page looks unchanged, run `php artisan view:clear`.
-6. Related folders: `reception-preview-static` holds the owner's original single-file HTML mock-up (saves in the browser only). It is the design reference; leave it as it is.
+6. The owner's original single-file HTML mock-up is kept as `docs/design-reference.html` (it saves in the browser only). It is the design reference; leave it as it is. The old folders `reception-preview` and `reception-preview-static` were removed on 6 Oct 2026; this folder (`Accomodation`, on GitHub) is the only copy.

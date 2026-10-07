@@ -1,0 +1,2269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guest Accommodation – Reception</title>
+
+<style>
+* { box-sizing: border-box; }
+
+:root {
+  --nav: #2d3e50;
+  --nav2: #3c5166;
+  --blue: #337ab7;
+  --green: #5cb85c;
+  --red: #d9534f;
+  --orange: #f0ad4e;
+  --gray: #6c757d;
+  --light: #f3f4f6;
+  --border: #ddd;
+}
+
+body {
+  margin: 0;
+  font-family: Segoe UI, Arial, sans-serif;
+  background: var(--light);
+  color: #222;
+  display: flex;
+  min-height: 100vh;
+}
+
+aside {
+  width: 220px;
+  background: var(--nav);
+  color: #cfd8e3;
+  padding: 16px 0;
+  flex-shrink: 0;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+aside h1 {
+  font-size: 15px;
+  color: #fff;
+  margin: 0 16px 20px;
+}
+
+aside a {
+  display: block;
+  padding: 10px 16px;
+  color: #cfd8e3;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+aside a:hover,
+aside a.active {
+  background: var(--nav2);
+  color: #fff;
+}
+
+aside a small {
+  color: #f0ad4e;
+  font-size: 11px;
+}
+
+main {
+  flex: 1;
+  padding: 20px 28px;
+  max-width: 1600px;
+}
+
+.banner {
+  background: #dff0d8;
+  border: 1px solid #c3e6cb;
+  color: #3c763d;
+  padding: 9px 12px;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-weight: 600;
+}
+
+h3 {
+  margin-top: 0;
+}
+
+.page {
+  display: none;
+}
+
+.page.show {
+  display: block;
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  min-width: 160px;
+  border-radius: 4px;
+}
+
+.stat b {
+  display: block;
+  font-size: 25px;
+  margin-bottom: 3px;
+}
+
+.stat span {
+  font-size: 12px;
+  color: #777;
+}
+
+.box {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 4px;
+}
+
+.todo {
+  border: 2px dashed #bbb;
+  color: #888;
+  padding: 30px;
+  text-align: center;
+  background: #fafafa;
+}
+
+.rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 10px;
+}
+
+.room {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.room:hover {
+  box-shadow: 0 2px 7px #0002;
+  transform: translateY(-1px);
+}
+
+.room.free {
+  border-left: 5px solid var(--green);
+}
+
+.room.used {
+  border-left: 5px solid var(--red);
+}
+
+.room.clean {
+  border-left: 5px solid #999;
+}
+
+.room.maintenance {
+  border-left: 5px solid var(--orange);
+}
+
+.room-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.room-status {
+  color: #666;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 14px;
+}
+
+th,
+td {
+  border: 1px solid var(--border);
+  padding: 8px 9px;
+  text-align: left;
+}
+
+th {
+  background: #e9ecef;
+}
+
+tr:hover td {
+  background: #fafafa;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  margin: 10px 0 4px;
+  font-weight: 500;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  max-width: 500px;
+  padding: 8px;
+  border: 1px solid #bbb;
+  border-radius: 3px;
+  background: #fff;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+button {
+  padding: 8px 14px;
+  border: 1px solid #aaa;
+  background: #e9ecef;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+button:hover {
+  background: #ddd;
+}
+
+button.primary {
+  background: var(--blue);
+  color: #fff;
+  border-color: #286090;
+}
+
+button.primary:hover {
+  background: #286090;
+}
+
+button.success {
+  background: var(--green);
+  color: #fff;
+  border-color: #4cae4c;
+}
+
+button.danger {
+  background: var(--red);
+  color: #fff;
+  border-color: #d43f3a;
+}
+
+button.warning {
+  background: var(--orange);
+  color: #fff;
+  border-color: #eea236;
+}
+
+button.small {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 0 18px;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.search-row input,
+.search-row select {
+  max-width: 260px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge.reserved {
+  background: #d9edf7;
+  color: #31708f;
+}
+
+.badge.checked {
+  background: #dff0d8;
+  color: #3c763d;
+}
+
+.badge.out {
+  background: #eee;
+  color: #666;
+}
+
+.badge.cancelled {
+  background: #f2dede;
+  color: #a94442;
+}
+
+.alert {
+  padding: 10px 12px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+
+.alert.success {
+  background: #dff0d8;
+  color: #3c763d;
+}
+
+.alert.error {
+  background: #f2dede;
+  color: #a94442;
+}
+
+.alert.info {
+  background: #d9edf7;
+  color: #31708f;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+.cal-head {
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  background: #e9ecef;
+  border-right: 1px solid var(--border);
+}
+
+.cal-day {
+  min-height: 110px;
+  padding: 7px;
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.cal-number {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.cal-event {
+  background: #d9edf7;
+  color: #31708f;
+  font-size: 11px;
+  padding: 3px 5px;
+  margin: 2px 0;
+  border-radius: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.report-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 18px;
+}
+
+.report-card strong {
+  display: block;
+  font-size: 25px;
+  margin-top: 5px;
+}
+
+.muted {
+  color: #777;
+}
+
+.empty {
+  padding: 25px;
+  text-align: center;
+  color: #888;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #0008;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-box {
+  background: #fff;
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+.close {
+  border: 0;
+  background: none;
+  font-size: 25px;
+  padding: 0;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  body {
+    display: block;
+  }
+
+  aside {
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    position: relative;
+  }
+
+  aside nav {
+    display: none;
+  }
+
+  aside.open nav {
+    display: block;
+  }
+
+  .mobile-menu {
+    display: block;
+    position: absolute;
+    right: 15px;
+    top: 12px;
+    color: #fff;
+    background: transparent;
+    border-color: #789;
+  }
+
+  main {
+    padding: 15px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar {
+    font-size: 11px;
+  }
+
+  .cal-day {
+    min-height: 80px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<aside id="sidebar">
+  <h1>⚓ Guest Accommodation</h1>
+
+  <button class="mobile-menu" onclick="toggleMenu()">☰</button>
+
+  <nav>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#reservations">Reservations</a>
+    <a href="#checkin">Check-in</a>
+    <a href="#checkout">Check-out</a>
+    <a href="#calendar">Calendar</a>
+    <a href="#reports">Reports</a>
+  </nav>
+</aside>
+
+<main>
+
+<div class="banner">
+  ✓ Reception system active — changes are saved automatically in this browser.
+</div>
+
+<!-- DASHBOARD -->
+<section class="page" id="dashboard">
+
+  <h2>Reception Dashboard</h2>
+
+  <div id="dashboardAlert"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <b id="statRooms">0</b>
+      <span>Total rooms</span>
+    </div>
+
+    <div class="stat">
+      <b id="statOccupied">0</b>
+      <span>Occupied</span>
+    </div>
+
+    <div class="stat">
+      <b id="statAvailable">0</b>
+      <span>Available</span>
+    </div>
+
+    <div class="stat">
+      <b id="statCleaning">0</b>
+      <span>Cleaning</span>
+    </div>
+
+    <div class="stat">
+      <b id="statArrivals">0</b>
+      <span>Arrivals today</span>
+    </div>
+
+    <div class="stat">
+      <b id="statDepartures">0</b>
+      <span>Departures today</span>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>Rooms</h3>
+    <div class="rooms" id="roomGrid"></div>
+  </div>
+
+  <div class="box">
+    <h3>Today's Arrivals</h3>
+    <div id="todayArrivals"></div>
+  </div>
+
+  <div class="box">
+    <h3>Today's Departures</h3>
+    <div id="todayDepartures"></div>
+  </div>
+
+</section>
+
+
+<!-- RESERVATIONS -->
+<section class="page" id="reservations">
+
+  <h2>Reservations</h2>
+
+  <div class="box">
+
+    <div class="search-row">
+      <input
+        id="reservationSearch"
+        placeholder="Search guest, company or room..."
+        oninput="renderReservations()"
+      >
+
+      <select id="reservationFilter" onchange="renderReservations()">
+        <option value="all">All statuses</option>
+        <option value="Reserved">Reserved</option>
+        <option value="Checked in">Checked in</option>
+        <option value="Checked out">Checked out</option>
+        <option value="Cancelled">Cancelled</option>
+      </select>
+
+      <button class="primary" onclick="openReservationModal()">
+        + New reservation
+      </button>
+    </div>
+
+    <div id="reservationTable"></div>
+
+  </div>
+
+</section>
+
+
+<!-- CHECK IN -->
+<section class="page" id="checkin">
+
+  <h2>Check-in</h2>
+
+  <div id="checkinAlert"></div>
+
+  <div class="box">
+
+    <div class="form-grid">
+
+      <div>
+        <label>Reservation</label>
+        <select id="checkinReservation" onchange="loadCheckinReservation()">
+          <option value="">Select reservation</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Room</label>
+        <select id="checkinRoom"></select>
+      </div>
+
+      <div>
+        <label>Guest / Contact person</label>
+        <input id="checkinGuest" placeholder="Full name">
+      </div>
+
+      <div>
+        <label>Company</label>
+        <input id="checkinCompany" placeholder="Company name">
+      </div>
+
+      <div>
+        <label>Contact number</label>
+        <input id="checkinContact" placeholder="09xx xxx xxxx">
+      </div>
+
+      <div>
+        <label>Valid ID</label>
+        <select id="checkinIdType">
+          <option value="">Select ID type</option>
+          <option>Passport</option>
+          <option>Driver's License</option>
+          <option>National ID</option>
+          <option>Company ID</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div>
+        <label>ID Number</label>
+        <input id="checkinIdNumber">
+      </div>
+
+      <div>
+        <label>Number of guests</label>
+        <input id="checkinGuests" type="number" min="1" value="1">
+      </div>
+
+      <div class="full">
+        <label>Notes</label>
+        <textarea id="checkinNotes" placeholder="Additional notes..."></textarea>
+      </div>
+
+    </div>
+
+    <br>
+
+    <button class="success" onclick="performCheckin()">
+      Complete check-in
+    </button>
+
+  </div>
+
+  <div class="box">
+    <h3>Currently Checked In</h3>
+    <div id="currentGuests"></div>
+  </div>
+
+</section>
+
+
+<!-- CHECK OUT -->
+<section class="page" id="checkout">
+
+  <h2>Check-out</h2>
+
+  <div id="checkoutAlert"></div>
+
+  <div class="box">
+
+    <label>Guest / Reservation</label>
+    <select id="checkoutReservation"></select>
+
+    <label>Room condition</label>
+    <select id="checkoutCondition">
+      <option value="clean">Clean</option>
+      <option value="cleaning">Needs cleaning</option>
+      <option value="maintenance">Maintenance required</option>
+    </select>
+
+    <label>Final notes</label>
+    <textarea id="checkoutNotes"></textarea>
+
+    <br>
+
+    <button class="primary" onclick="performCheckout()">
+      Complete check-out
+    </button>
+
+  </div>
+
+  <div class="box">
+    <h3>Checked-out Reservations</h3>
+    <div id="checkoutHistory"></div>
+  </div>
+
+</section>
+
+
+<!-- CALENDAR -->
+<section class="page" id="calendar">
+
+  <h2>Calendar</h2>
+
+  <div class="box">
+
+    <div class="actions" style="margin-bottom:12px">
+      <button onclick="changeMonth(-1)">‹ Previous</button>
+      <button onclick="goToday()">Today</button>
+      <button onclick="changeMonth(1)">Next ›</button>
+      <strong id="calendarTitle" style="padding:8px"></strong>
+    </div>
+
+    <div class="calendar" id="calendarGrid"></div>
+
+  </div>
+
+</section>
+
+
+<!-- REPORTS -->
+<section class="page" id="reports">
+
+  <h2>Reports</h2>
+
+  <div class="report-cards">
+
+    <div class="report-card">
+      Total reservations
+      <strong id="reportReservations">0</strong>
+    </div>
+
+    <div class="report-card">
+      Checked-in guests
+      <strong id="reportCheckedIn">0</strong>
+    </div>
+
+    <div class="report-card">
+      Completed stays
+      <strong id="reportCompleted">0</strong>
+    </div>
+
+    <div class="report-card">
+      Cancelled
+      <strong id="reportCancelled">0</strong>
+    </div>
+
+  </div>
+
+  <br>
+
+  <div class="box">
+    <h3>Room Utilization</h3>
+    <div id="roomReport"></div>
+  </div>
+
+  <div class="box">
+    <h3>Reservation History</h3>
+    <div id="reportTable"></div>
+  </div>
+
+  <br>
+
+  <button onclick="exportCSV()">Export Reservations CSV</button>
+  <button onclick="resetDemoData()" class="danger">
+    Reset demo data
+  </button>
+
+</section>
+
+</main>
+
+
+<!-- RESERVATION MODAL -->
+<div class="modal" id="reservationModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3 style="margin:0">New Reservation</h3>
+      <button class="close" onclick="closeReservationModal()">×</button>
+    </div>
+
+    <div id="reservationModalAlert"></div>
+
+    <div class="form-grid">
+
+      <div>
+        <label>Guest name *</label>
+        <input id="rGuest" placeholder="Full name">
+      </div>
+
+      <div>
+        <label>Company</label>
+        <input id="rCompany" placeholder="Company name">
+      </div>
+
+      <div>
+        <label>Contact number</label>
+        <input id="rContact" placeholder="09xx xxx xxxx">
+      </div>
+
+      <div>
+        <label>Email</label>
+        <input id="rEmail" type="email">
+      </div>
+
+      <div>
+        <label>Room *</label>
+        <select id="rRoom"></select>
+      </div>
+
+      <div>
+        <label>Number of guests</label>
+        <input id="rGuests" type="number" min="1" value="1">
+      </div>
+
+      <div>
+        <label>Check-in *</label>
+        <input id="rCheckin" type="date">
+      </div>
+
+      <div>
+        <label>Check-in time</label>
+        <input id="rCheckinTime" type="time" value="14:00">
+      </div>
+
+      <div>
+        <label>Check-out *</label>
+        <input id="rCheckout" type="date">
+      </div>
+
+      <div>
+        <label>Check-out time</label>
+        <input id="rCheckoutTime" type="time" value="12:00">
+      </div>
+
+      <div class="full">
+        <label>Notes</label>
+        <textarea id="rNotes"></textarea>
+      </div>
+
+    </div>
+
+    <br>
+
+    <div class="actions">
+      <button class="primary" onclick="saveReservation()">
+        Save reservation
+      </button>
+
+      <button onclick="closeReservationModal()">
+        Cancel
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+
+const defaultRooms = [
+  { id: "A-101", type: "Standard", status: "free" },
+  { id: "A-102", type: "Standard", status: "used" },
+  { id: "A-103", type: "Standard", status: "free" },
+  { id: "A-104", type: "Standard", status: "clean" },
+  { id: "A-105", type: "Standard", status: "free" },
+  { id: "Villa 1", type: "Villa", status: "used" },
+  { id: "Villa 2", type: "Villa", status: "used" },
+  { id: "Villa 3", type: "Villa", status: "free" }
+];
+
+const today = new Date();
+const todayISO = isoDate(today);
+
+function datePlus(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return isoDate(d);
+}
+
+const defaultReservations = [
+  {
+    id: 1,
+    guest: "Juan Dela Cruz",
+    company: "Sample Corp",
+    contact: "09171234567",
+    email: "",
+    room: "A-101",
+    guests: 1,
+    checkin: datePlus(1),
+    checkinTime: "14:00",
+    checkout: datePlus(3),
+    checkoutTime: "12:00",
+    status: "Reserved",
+    notes: ""
+  },
+  {
+    id: 2,
+    guest: "Maria Santos",
+    company: "Sample Corp",
+    contact: "09181234567",
+    email: "",
+    room: "Villa 2",
+    guests: 2,
+    checkin: datePlus(-1),
+    checkinTime: "14:00",
+    checkout: datePlus(1),
+    checkoutTime: "12:00",
+    status: "Checked in",
+    notes: ""
+  },
+  {
+    id: 3,
+    guest: "Pedro Reyes",
+    company: "",
+    contact: "",
+    email: "",
+    room: "A-103",
+    guests: 1,
+    checkin: datePlus(3),
+    checkinTime: "14:00",
+    checkout: datePlus(5),
+    checkoutTime: "12:00",
+    status: "Reserved",
+    notes: ""
+  }
+];
+
+let rooms = load("rooms", defaultRooms);
+let reservations = load("reservations", defaultReservations);
+
+let calendarDate = new Date();
+calendarDate.setDate(1);
+
+
+/* ============================================================
+   STORAGE
+============================================================ */
+
+function load(key, fallback) {
+  try {
+    const saved = localStorage.getItem("guestAccommodation_" + key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function saveData() {
+  localStorage.setItem(
+    "guestAccommodation_rooms",
+    JSON.stringify(rooms)
+  );
+
+  localStorage.setItem(
+    "guestAccommodation_reservations",
+    JSON.stringify(reservations)
+  );
+}
+
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function isoDate(date) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+
+  const d = new Date(value + "T00:00:00");
+
+  return d.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function statusBadge(status) {
+  let cls = "reserved";
+
+  if (status === "Checked in") cls = "checked";
+  if (status === "Checked out") cls = "out";
+  if (status === "Cancelled") cls = "cancelled";
+
+  return `<span class="badge ${cls}">${escapeHTML(status)}</span>`;
+}
+
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function roomStatusLabel(status) {
+  const map = {
+    free: "Available",
+    used: "Occupied",
+    clean: "Cleaning",
+    maintenance: "Maintenance"
+  };
+
+  return map[status] || status;
+}
+
+function showAlert(id, message, type = "success") {
+  const el = document.getElementById(id);
+
+  if (!el) return;
+
+  el.innerHTML =
+    `<div class="alert ${type}">${escapeHTML(message)}</div>`;
+
+  setTimeout(() => {
+    el.innerHTML = "";
+  }, 3500);
+}
+
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+
+function showPage() {
+
+  let id = (location.hash || "#dashboard").slice(1);
+
+  const valid = [
+    "dashboard",
+    "reservations",
+    "checkin",
+    "checkout",
+    "calendar",
+    "reports"
+  ];
+
+  if (!valid.includes(id)) {
+    id = "dashboard";
+  }
+
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.toggle("show", page.id === id);
+  });
+
+  document.querySelectorAll("aside a").forEach(link => {
+    link.classList.toggle(
+      "active",
+      link.getAttribute("href") === "#" + id
+    );
+  });
+
+  renderAll();
+}
+
+window.addEventListener("hashchange", showPage);
+
+function toggleMenu() {
+  document.getElementById("sidebar").classList.toggle("open");
+}
+
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+
+function renderDashboard() {
+
+  const occupied = rooms.filter(r => r.status === "used").length;
+  const available = rooms.filter(r => r.status === "free").length;
+  const cleaning = rooms.filter(r => r.status === "clean").length;
+
+  const arrivals = reservations.filter(r =>
+    r.checkin === todayISO &&
+    r.status === "Reserved"
+  );
+
+  const departures = reservations.filter(r =>
+    r.checkout === todayISO &&
+    r.status === "Checked in"
+  );
+
+  document.getElementById("statRooms").textContent = rooms.length;
+  document.getElementById("statOccupied").textContent = occupied;
+  document.getElementById("statAvailable").textContent = available;
+  document.getElementById("statCleaning").textContent = cleaning;
+  document.getElementById("statArrivals").textContent = arrivals.length;
+  document.getElementById("statDepartures").textContent = departures.length;
+
+  renderRooms();
+  renderTodayList(arrivals, "todayArrivals", "No arrivals today.");
+  renderTodayList(departures, "todayDepartures", "No departures today.");
+}
+
+function renderRooms() {
+
+  const container = document.getElementById("roomGrid");
+
+  container.innerHTML = rooms.map(room => {
+
+    const reservation = reservations.find(r =>
+      r.room === room.id &&
+      r.status === "Checked in"
+    );
+
+    return `
+      <div class="room ${escapeHTML(room.status)}"
+           onclick="roomClicked('${escapeHTML(room.id)}')">
+
+        <div class="room-name">${escapeHTML(room.id)}</div>
+
+        <div class="room-status">
+          ${escapeHTML(roomStatusLabel(room.status))}
+        </div>
+
+        ${
+          reservation
+          ? `<small>${escapeHTML(reservation.guest)}</small>`
+          : ""
+        }
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+function roomClicked(roomId) {
+
+  const room = rooms.find(r => r.id === roomId);
+
+  if (!room) return;
+
+  if (room.status === "used") {
+
+    const reservation = reservations.find(r =>
+      r.room === roomId &&
+      r.status === "Checked in"
+    );
+
+    if (reservation) {
+      alert(
+        `${reservation.guest}\n\n` +
+        `Room: ${roomId}\n` +
+        `Check-in: ${formatDate(reservation.checkin)}`
+      );
+    }
+
+    return;
+  }
+
+  const newStatus =
+    prompt(
+      `Room ${roomId}\n\n` +
+      `Current status: ${roomStatusLabel(room.status)}\n\n` +
+      `Enter:\n` +
+      `free = Available\n` +
+      `clean = Cleaning\n` +
+      `maintenance = Maintenance`
+    );
+
+  if (!newStatus) return;
+
+  if (!["free", "clean", "maintenance"].includes(newStatus)) {
+    alert("Invalid status.");
+    return;
+  }
+
+  room.status = newStatus;
+
+  saveData();
+  renderAll();
+}
+
+function renderTodayList(list, elementId, emptyMessage) {
+
+  const el = document.getElementById(elementId);
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">${emptyMessage}</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <table>
+      <tr>
+        <th>Guest</th>
+        <th>Company</th>
+        <th>Room</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+
+      ${list.map(r => `
+        <tr>
+          <td>${escapeHTML(r.guest)}</td>
+          <td>${escapeHTML(r.company || "—")}</td>
+          <td>${escapeHTML(r.room)}</td>
+          <td>${formatDate(r.checkin === todayISO ? r.checkin : r.checkout)}</td>
+          <td>${statusBadge(r.status)}</td>
+        </tr>
+      `).join("")}
+
+    </table>
+  `;
+}
+
+
+/* ============================================================
+   RESERVATIONS
+============================================================ */
+
+function openReservationModal() {
+
+  document.getElementById("reservationModal").classList.add("show");
+
+  populateRoomSelect("rRoom", true);
+
+  document.getElementById("rCheckin").value = todayISO;
+  document.getElementById("rCheckout").value = datePlus(1);
+}
+
+function closeReservationModal() {
+  document.getElementById("reservationModal").classList.remove("show");
+}
+
+function populateRoomSelect(elementId, onlyAvailable = false) {
+
+  const select = document.getElementById(elementId);
+
+  if (!select) return;
+
+  let availableRooms = rooms;
+
+  if (onlyAvailable) {
+    availableRooms = rooms.filter(r =>
+      r.status === "free"
+    );
+  }
+
+  select.innerHTML =
+    `<option value="">Select room</option>` +
+    availableRooms.map(r =>
+      `<option value="${escapeHTML(r.id)}">
+        ${escapeHTML(r.id)} — ${escapeHTML(r.type)}
+      </option>`
+    ).join("");
+}
+
+function saveReservation() {
+
+  const guest = document.getElementById("rGuest").value.trim();
+  const room = document.getElementById("rRoom").value;
+  const checkin = document.getElementById("rCheckin").value;
+  const checkout = document.getElementById("rCheckout").value;
+
+  if (!guest || !room || !checkin || !checkout) {
+    showAlert(
+      "reservationModalAlert",
+      "Guest, room, check-in and check-out are required.",
+      "error"
+    );
+    return;
+  }
+
+  if (checkout <= checkin) {
+    showAlert(
+      "reservationModalAlert",
+      "Check-out must be after check-in.",
+      "error"
+    );
+    return;
+  }
+
+  const conflicting = reservations.some(r => {
+
+    if (r.room !== room) return false;
+
+    if (["Cancelled", "Checked out"].includes(r.status)) {
+      return false;
+    }
+
+    return (
+      checkin < r.checkout &&
+      checkout > r.checkin
+    );
+  });
+
+  if (conflicting) {
+    showAlert(
+      "reservationModalAlert",
+      "That room is already reserved during the selected dates.",
+      "error"
+    );
+    return;
+  }
+
+  const reservation = {
+    id: Date.now(),
+    guest,
+    company: document.getElementById("rCompany").value.trim(),
+    contact: document.getElementById("rContact").value.trim(),
+    email: document.getElementById("rEmail").value.trim(),
+    room,
+    guests: Number(document.getElementById("rGuests").value) || 1,
+    checkin,
+    checkinTime: document.getElementById("rCheckinTime").value,
+    checkout,
+    checkoutTime: document.getElementById("rCheckoutTime").value,
+    status: "Reserved",
+    notes: document.getElementById("rNotes").value.trim()
+  };
+
+  reservations.push(reservation);
+
+  saveData();
+
+  closeReservationModal();
+
+  clearReservationForm();
+
+  renderAll();
+
+  location.hash = "reservations";
+}
+
+function clearReservationForm() {
+
+  [
+    "rGuest",
+    "rCompany",
+    "rContact",
+    "rEmail",
+    "rNotes"
+  ].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  document.getElementById("rGuests").value = 1;
+}
+
+function renderReservations() {
+
+  const search =
+    document.getElementById("reservationSearch")?.value
+      .toLowerCase() || "";
+
+  const filter =
+    document.getElementById("reservationFilter")?.value || "all";
+
+  let list = reservations.filter(r => {
+
+    const matchesSearch =
+      !search ||
+      r.guest.toLowerCase().includes(search) ||
+      (r.company || "").toLowerCase().includes(search) ||
+      r.room.toLowerCase().includes(search);
+
+    const matchesFilter =
+      filter === "all" || r.status === filter;
+
+    return matchesSearch && matchesFilter;
+  });
+
+  list.sort((a, b) =>
+    a.checkin.localeCompare(b.checkin)
+  );
+
+  const container = document.getElementById("reservationTable");
+
+  if (!list.length) {
+    container.innerHTML =
+      `<div class="empty">No reservations found.</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="overflow:auto">
+
+    <table>
+
+      <tr>
+        <th>#</th>
+        <th>Guest</th>
+        <th>Company</th>
+        <th>Room</th>
+        <th>Check-in</th>
+        <th>Check-out</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+
+      ${list.map((r, index) => `
+
+        <tr>
+
+          <td>${index + 1}</td>
+
+          <td>
+            <strong>${escapeHTML(r.guest)}</strong>
+            <br>
+            <small class="muted">
+              ${escapeHTML(r.contact || "")}
+            </small>
+          </td>
+
+          <td>${escapeHTML(r.company || "—")}</td>
+
+          <td>${escapeHTML(r.room)}</td>
+
+          <td>
+            ${formatDate(r.checkin)}
+            <br>
+            <small>${escapeHTML(r.checkinTime || "")}</small>
+          </td>
+
+          <td>
+            ${formatDate(r.checkout)}
+            <br>
+            <small>${escapeHTML(r.checkoutTime || "")}</small>
+          </td>
+
+          <td>${statusBadge(r.status)}</td>
+
+          <td>
+            <div class="actions">
+
+              ${
+                r.status === "Reserved"
+                ? `
+                  <button
+                    class="success small"
+                    onclick="quickCheckin(${r.id})">
+                    Check-in
+                  </button>
+
+                  <button
+                    class="danger small"
+                    onclick="cancelReservation(${r.id})">
+                    Cancel
+                  </button>
+                `
+                : ""
+              }
+
+              ${
+                r.status === "Checked in"
+                ? `
+                  <button
+                    class="primary small"
+                    onclick="quickCheckout(${r.id})">
+                    Check-out
+                  </button>
+                `
+                : ""
+              }
+
+              <button
+                class="small"
+                onclick="viewReservation(${r.id})">
+                View
+              </button>
+
+              ${
+                r.status !== "Checked in"
+                ? `
+                  <button
+                    class="danger small"
+                    onclick="deleteReservation(${r.id})">
+                    Delete
+                  </button>
+                `
+                : ""
+              }
+
+            </div>
+          </td>
+
+        </tr>
+
+      `).join("")}
+
+    </table>
+
+    </div>
+  `;
+}
+
+function viewReservation(id) {
+
+  const r = reservations.find(x => x.id === id);
+
+  if (!r) return;
+
+  alert(
+    `Reservation #${r.id}\n\n` +
+    `Guest: ${r.guest}\n` +
+    `Company: ${r.company || "—"}\n` +
+    `Contact: ${r.contact || "—"}\n` +
+    `Email: ${r.email || "—"}\n` +
+    `Room: ${r.room}\n` +
+    `Guests: ${r.guests}\n` +
+    `Check-in: ${formatDate(r.checkin)} ${r.checkinTime}\n` +
+    `Check-out: ${formatDate(r.checkout)} ${r.checkoutTime}\n` +
+    `Status: ${r.status}\n` +
+    `Notes: ${r.notes || "—"}`
+  );
+}
+
+function cancelReservation(id) {
+
+  const r = reservations.find(x => x.id === id);
+
+  if (!r) return;
+
+  if (!confirm(`Cancel reservation for ${r.guest}?`)) {
+    return;
+  }
+
+  r.status = "Cancelled";
+
+  saveData();
+  renderAll();
+}
+
+function deleteReservation(id) {
+
+  const r = reservations.find(x => x.id === id);
+
+  if (!r) return;
+
+  if (!confirm(`Delete reservation for ${r.guest}?`)) {
+    return;
+  }
+
+  reservations = reservations.filter(x => x.id !== id);
+
+  saveData();
+  renderAll();
+}
+
+
+/* ============================================================
+   CHECK-IN
+============================================================ */
+
+function renderCheckin() {
+
+  const select =
+    document.getElementById("checkinReservation");
+
+  const available = reservations.filter(r =>
+    r.status === "Reserved"
+  );
+
+  select.innerHTML =
+    `<option value="">Select reservation</option>` +
+    available.map(r =>
+      `<option value="${r.id}">
+        ${escapeHTML(r.guest)} — ${escapeHTML(r.room)}
+        — ${formatDate(r.checkin)}
+      </option>`
+    ).join("");
+
+  populateRoomSelect("checkinRoom", true);
+
+  renderCurrentGuests();
+}
+
+function loadCheckinReservation() {
+
+  const id =
+    Number(document.getElementById("checkinReservation").value);
+
+  const r = reservations.find(x => x.id === id);
+
+  if (!r) return;
+
+  document.getElementById("checkinRoom").value = r.room;
+  document.getElementById("checkinGuest").value = r.guest;
+  document.getElementById("checkinCompany").value = r.company || "";
+  document.getElementById("checkinContact").value = r.contact || "";
+}
+
+function performCheckin() {
+
+  const reservationId =
+    Number(document.getElementById("checkinReservation").value);
+
+  const guest =
+    document.getElementById("checkinGuest").value.trim();
+
+  const room =
+    document.getElementById("checkinRoom").value;
+
+  if (!guest || !room) {
+    showAlert(
+      "checkinAlert",
+      "Guest and room are required.",
+      "error"
+    );
+    return;
+  }
+
+  let reservation =
+    reservations.find(r => r.id === reservationId);
+
+  if (!reservationId) {
+
+    reservation = {
+      id: Date.now(),
+      guest,
+      company: document.getElementById("checkinCompany").value.trim(),
+      contact: document.getElementById("checkinContact").value.trim(),
+      email: "",
+      room,
+      guests: Number(document.getElementById("checkinGuests").value) || 1,
+      checkin: todayISO,
+      checkinTime: new Date().toTimeString().slice(0,5),
+      checkout: datePlus(1),
+      checkoutTime: "12:00",
+      status: "Checked in",
+      notes: document.getElementById("checkinNotes").value.trim()
+    };
+
+    reservations.push(reservation);
+
+  } else {
+
+    reservation.status = "Checked in";
+    reservation.room = room;
+    reservation.guest = guest;
+    reservation.company =
+      document.getElementById("checkinCompany").value.trim();
+
+    reservation.contact =
+      document.getElementById("checkinContact").value.trim();
+
+    reservation.guests =
+      Number(document.getElementById("checkinGuests").value) || 1;
+
+    reservation.notes =
+      document.getElementById("checkinNotes").value.trim();
+  }
+
+  const roomObj = rooms.find(r => r.id === room);
+
+  if (roomObj) {
+    roomObj.status = "used";
+  }
+
+  saveData();
+
+  showAlert(
+    "checkinAlert",
+    `${guest} has been checked in to ${room}.`
+  );
+
+  clearCheckinForm();
+
+  renderAll();
+}
+
+function quickCheckin(id) {
+
+  location.hash = "checkin";
+
+  setTimeout(() => {
+    document.getElementById("checkinReservation").value = id;
+    loadCheckinReservation();
+  }, 50);
+}
+
+function clearCheckinForm() {
+
+  document.getElementById("checkinReservation").value = "";
+  document.getElementById("checkinGuest").value = "";
+  document.getElementById("checkinCompany").value = "";
+  document.getElementById("checkinContact").value = "";
+  document.getElementById("checkinIdType").value = "";
+  document.getElementById("checkinIdNumber").value = "";
+  document.getElementById("checkinGuests").value = 1;
+  document.getElementById("checkinNotes").value = "";
+}
+
+function renderCurrentGuests() {
+
+  const list =
+    reservations.filter(r => r.status === "Checked in");
+
+  const el = document.getElementById("currentGuests");
+
+  if (!list.length) {
+    el.innerHTML =
+      `<div class="empty">No guests are currently checked in.</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <table>
+
+      <tr>
+        <th>Guest</th>
+        <th>Company</th>
+        <th>Room</th>
+        <th>Check-in</th>
+        <th>Check-out</th>
+        <th>Action</th>
+      </tr>
+
+      ${list.map(r => `
+
+        <tr>
+
+          <td>${escapeHTML(r.guest)}</td>
+          <td>${escapeHTML(r.company || "—")}</td>
+          <td>${escapeHTML(r.room)}</td>
+          <td>${formatDate(r.checkin)}</td>
+          <td>${formatDate(r.checkout)}</td>
+
+          <td>
+            <button
+              class="primary small"
+              onclick="quickCheckout(${r.id})">
+              Check-out
+            </button>
+          </td>
+
+        </tr>
+
+      `).join("")}
+
+    </table>
+  `;
+}
+
+
+/* ============================================================
+   CHECK-OUT
+============================================================ */
+
+function renderCheckout() {
+
+  const select =
+    document.getElementById("checkoutReservation");
+
+  const list =
+    reservations.filter(r => r.status === "Checked in");
+
+  select.innerHTML =
+    `<option value="">Select guest</option>` +
+    list.map(r =>
+      `<option value="${r.id}">
+        ${escapeHTML(r.guest)}
+        — ${escapeHTML(r.room)}
+      </option>`
+    ).join("");
+
+  const history =
+    reservations.filter(r => r.status === "Checked out");
+
+  const el =
+    document.getElementById("checkoutHistory");
+
+  if (!history.length) {
+    el.innerHTML =
+      `<div class="empty">No completed check-outs yet.</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <table>
+
+      <tr>
+        <th>Guest</th>
+        <th>Room</th>
+        <th>Check-in</th>
+        <th>Check-out</th>
+        <th>Status</th>
+      </tr>
+
+      ${history.map(r => `
+
+        <tr>
+          <td>${escapeHTML(r.guest)}</td>
+          <td>${escapeHTML(r.room)}</td>
+          <td>${formatDate(r.checkin)}</td>
+          <td>${formatDate(r.actualCheckout || r.checkout)}</td>
+          <td>${statusBadge(r.status)}</td>
+        </tr>
+
+      `).join("")}
+
+    </table>
+  `;
+}
+
+function performCheckout() {
+
+  const id =
+    Number(document.getElementById("checkoutReservation").value);
+
+  const r =
+    reservations.find(x => x.id === id);
+
+  if (!r) {
+    showAlert(
+      "checkoutAlert",
+      "Please select a guest.",
+      "error"
+    );
+    return;
+  }
+
+  const condition =
+    document.getElementById("checkoutCondition").value;
+
+  if (!confirm(`Complete check-out for ${r.guest}?`)) {
+    return;
+  }
+
+  r.status = "Checked out";
+  r.actualCheckout = todayISO;
+  r.checkoutNotes =
+    document.getElementById("checkoutNotes").value.trim();
+
+  const room =
+    rooms.find(x => x.id === r.room);
+
+  if (room) {
+    if (condition === "clean") {
+      room.status = "free";
+    }
+
+    if (condition === "cleaning") {
+      room.status = "clean";
+    }
+
+    if (condition === "maintenance") {
+      room.status = "maintenance";
+    }
+  }
+
+  saveData();
+
+  showAlert(
+    "checkoutAlert",
+    `${r.guest} has been checked out.`
+  );
+
+  document.getElementById("checkoutReservation").value = "";
+  document.getElementById("checkoutNotes").value = "";
+
+  renderAll();
+}
+
+function quickCheckout(id) {
+
+  location.hash = "checkout";
+
+  setTimeout(() => {
+    document.getElementById("checkoutReservation").value = id;
+  }, 50);
+}
+
+
+/* ============================================================
+   CALENDAR
+============================================================ */
+
+function changeMonth(amount) {
+
+  calendarDate.setMonth(
+    calendarDate.getMonth() + amount
+  );
+
+  renderCalendar();
+}
+
+function goToday() {
+
+  calendarDate = new Date();
+  calendarDate.setDate(1);
+
+  renderCalendar();
+}
+
+function renderCalendar() {
+
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+
+  const monthName =
+    calendarDate.toLocaleDateString("en-PH", {
+      month: "long",
+      year: "numeric"
+    });
+
+  document.getElementById("calendarTitle").textContent =
+    monthName;
+
+  const firstDay =
+    new Date(year, month, 1).getDay();
+
+  const daysInMonth =
+    new Date(year, month + 1, 0).getDate();
+
+  const grid =
+    document.getElementById("calendarGrid");
+
+  const headers = [
+    "Sun",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat"
+  ];
+
+  let html =
+    headers.map(day =>
+      `<div class="cal-head">${day}</div>`
+    ).join("");
+
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="cal-day"></div>`;
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+
+    const date =
+      isoDate(new Date(year, month, day));
+
+    const events =
+      reservations.filter(r =>
+        r.checkin === date ||
+        r.checkout === date
+      );
+
+    html += `
+      <div class="cal-day">
+
+        <div class="cal-number">${day}</div>
+
+        ${events.map(r => {
+
+          const label =
+            r.checkin === date
+              ? `IN: ${r.guest}`
+              : `OUT: ${r.guest}`;
+
+          return `
+            <div
+              class="cal-event"
+              title="${escapeHTML(label)}">
+              ${escapeHTML(label)}
+            </div>
+          `;
+
+        }).join("")}
+
+      </div>
+    `;
+  }
+
+  grid.innerHTML = html;
+}
+
+
+/* ============================================================
+   REPORTS
+============================================================ */
+
+function renderReports() {
+
+  document.getElementById("reportReservations").textContent =
+    reservations.length;
+
+  document.getElementById("reportCheckedIn").textContent =
+    reservations.filter(r => r.status === "Checked in").length;
+
+  document.getElementById("reportCompleted").textContent =
+    reservations.filter(r => r.status === "Checked out").length;
+
+  document.getElementById("reportCancelled").textContent =
+    reservations.filter(r => r.status === "Cancelled").length;
+
+  const roomReport =
+    document.getElementById("roomReport");
+
+  const counts = {
+    free: rooms.filter(r => r.status === "free").length,
+    used: rooms.filter(r => r.status === "used").length,
+    clean: rooms.filter(r => r.status === "clean").length,
+    maintenance: rooms.filter(r => r.status === "maintenance").length
+  };
+
+  roomReport.innerHTML = `
+    <table>
+
+      <tr>
+        <th>Status</th>
+        <th>Rooms</th>
+        <th>Percentage</th>
+      </tr>
+
+      <tr>
+        <td>Available</td>
+        <td>${counts.free}</td>
+        <td>${percentage(counts.free, rooms.length)}%</td>
+      </tr>
+
+      <tr>
+        <td>Occupied</td>
+        <td>${counts.used}</td>
+        <td>${percentage(counts.used, rooms.length)}%</td>
+      </tr>
+
+      <tr>
+        <td>Cleaning</td>
+        <td>${counts.clean}</td>
+        <td>${percentage(counts.clean, rooms.length)}%</td>
+      </tr>
+
+      <tr>
+        <td>Maintenance</td>
+        <td>${counts.maintenance}</td>
+        <td>${percentage(counts.maintenance, rooms.length)}%</td>
+      </tr>
+
+    </table>
+  `;
+
+  const reportTable =
+    document.getElementById("reportTable");
+
+  if (!reservations.length) {
+    reportTable.innerHTML =
+      `<div class="empty">No reservation history.</div>`;
+    return;
+  }
+
+  reportTable.innerHTML = `
+    <div style="overflow:auto">
+
+    <table>
+
+      <tr>
+        <th>Guest</th>
+        <th>Room</th>
+        <th>Arrival</th>
+        <th>Departure</th>
+        <th>Status</th>
+      </tr>
+
+      ${reservations.map(r => `
+        <tr>
+          <td>${escapeHTML(r.guest)}</td>
+          <td>${escapeHTML(r.room)}</td>
+          <td>${formatDate(r.checkin)}</td>
+          <td>${formatDate(r.checkout)}</td>
+          <td>${statusBadge(r.status)}</td>
+        </tr>
+      `).join("")}
+
+    </table>
+
+    </div>
+  `;
+}
+
+function percentage(value, total) {
+
+  if (!total) return 0;
+
+  return Math.round((value / total) * 100);
+}
+
+
+/* ============================================================
+   EXPORT
+============================================================ */
+
+function exportCSV() {
+
+  const headers = [
+    "ID",
+    "Guest",
+    "Company",
+    "Contact",
+    "Room",
+    "Guests",
+    "Check-in",
+    "Check-in Time",
+    "Check-out",
+    "Check-out Time",
+    "Status",
+    "Notes"
+  ];
+
+  const rows = reservations.map(r => [
+    r.id,
+    r.guest,
+    r.company,
+    r.contact,
+    r.room,
+    r.guests,
+    r.checkin,
+    r.checkinTime,
+    r.checkout,
+    r.checkoutTime,
+    r.status,
+    r.notes
+  ]);
+
+  const csv = [
+    headers,
+    ...rows
+  ].map(row =>
+    row.map(value =>
+      `"${String(value ?? "").replaceAll('"', '""')}"`
+    ).join(",")
+  ).join("\n");
+
+  const blob =
+    new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download =
+    `reservations-${todayISO}.csv`;
+
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+
+/* ============================================================
+   RESET
+============================================================ */
+
+function resetDemoData() {
+
+  if (!confirm(
+    "This will delete all current reservations and restore the demo data. Continue?"
+  )) {
+    return;
+  }
+
+  rooms = JSON.parse(JSON.stringify(defaultRooms));
+  reservations = JSON.parse(JSON.stringify(defaultReservations));
+
+  saveData();
+
+  renderAll();
+
+  alert("Demo data restored.");
+}
+
+
+/* ============================================================
+   RENDER EVERYTHING
+============================================================ */
+
+function renderAll() {
+
+  renderDashboard();
+  renderReservations();
+  renderCheckin();
+  renderCheckout();
+  renderCalendar();
+  renderReports();
+}
+
+
+/* ============================================================
+   STARTUP
+============================================================ */
+
+showPage();
+
+</script>
+
+</body>
+</html>

@@ -2437,3 +2437,42 @@ tr:hover td {
 .extra-rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0 16px; }
 #roomAdvice { margin-top: 12px; }
 #roomAdvice button { margin-left: 6px; }
+
+/* =========================================================
+   PAGER (Previous / Next under a table)
+   ========================================================= */
+
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+    flex-wrap: wrap;
+
+    margin-top: 12px;
+
+    font-size: 13px;
+}
+
+a.btn.disabled {
+    opacity: .45;
+
+    pointer-events: none;
+}
+
+/* =========================================================
+   TABLE CELLS (money on the right, cells that must stay on one line)
+   ========================================================= */
+
+th.amount,
+td.amount {
+    text-align: right;
+    white-space: nowrap;
+}
+
+td.nowrap,
+a.btn,
+button {
+    white-space: nowrap;
+}

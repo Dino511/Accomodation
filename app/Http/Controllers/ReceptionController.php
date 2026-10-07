@@ -30,7 +30,8 @@ class ReceptionController extends Controller
             'current' => Booking::with('room')
                 ->where('status', 'Checked In')
                 ->orderBy('check_out')
-                ->get(),
+                ->paginate(Booking::PER_PAGE)
+                ->withQueryString(),
         ]);
     }
 
@@ -290,19 +291,40 @@ class ReceptionController extends Controller
     // -> 4 Additional charges -> 5 Billing / payment -> 6 Return ID
     // -> 7 Record check-out in guest log -> 8 Guest leaves
 
-    public function checkoutList()
+    // Guests in house on top, then the checked-out guests with their own search and sorting.
+    public function checkoutList(Request $request)
     {
+        $search = $request->query('search');
+        $sort = $request->query('sort', 'recent');
+
+        $history = Booking::with('room')
+            ->where('status', 'Checked Out')
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('guest_name', 'like', "%$search%")
+                        ->orWhere('company', 'like', "%$search%")
+                        ->orWhereHas('room', fn ($r) => $r->where('room_no', 'like', "%$search%"));
+                });
+            })
+            // The most recent check-out is first unless reception picks another order.
+            ->when($sort == 'oldest', fn ($q) => $q->orderBy('actual_check_out')->orderBy('updated_at'))
+            ->when($sort == 'guest', fn ($q) => $q->orderBy('guest_name'))
+            ->when($sort == 'room', fn ($q) => $q->orderBy(Room::select('room_no')->whereColumn('rooms.id', 'bookings.room_id')))
+            ->when(! in_array($sort, ['oldest', 'guest', 'room']), fn ($q) => $q->orderByDesc('actual_check_out')->orderByDesc('updated_at'))
+            ->paginate(Booking::PER_PAGE)
+            ->withQueryString()
+            ->fragment('checked-out');
+
         return view('checkout', [
+            // the guest who should leave soonest (or is overdue) is first
             'current' => Booking::with('room')
                 ->whereIn('status', ['Checked In', 'Checking Out'])
                 ->orderBy('check_out')
                 ->get(),
 
-            'history' => Booking::with('room')
-                ->where('status', 'Checked Out')
-                ->orderByDesc('actual_check_out')
-                ->limit(10)
-                ->get(),
+            'history' => $history,
+            'search' => $search,
+            'sort' => $sort,
         ]);
     }
 
@@ -551,7 +573,8 @@ class ReceptionController extends Controller
             ->where('status', '!=', 'Reserved')
             ->where('status', '!=', 'Cancelled')
             ->orderByDesc('check_in')
-            ->get();
+            ->paginate(Booking::PER_PAGE)
+            ->fragment('guest-log');
 
         $utilization = [];
 
@@ -569,6 +592,13 @@ class ReceptionController extends Controller
         return view('reports', [
             'bookings' => $bookings,
             'utilization' => $utilization,
+
+            // counts for the tiles on top (the table below only holds one page)
+            'totals' => [
+                'stays' => $bookings->total(),
+                'inHouse' => Booking::whereIn('status', ['Checked In', 'Checking Out'])->count(),
+                'checkedOut' => Booking::where('status', 'Checked Out')->count(),
+            ],
 
             'idsHeld' => Booking::where('id_surrendered', true)
                 ->where('id_returned', false)

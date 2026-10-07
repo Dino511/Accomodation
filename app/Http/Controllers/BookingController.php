@@ -12,10 +12,12 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
-        $status = $request->query('status');
+        // This page is for reservations only. Guests who are checked in or
+        // checked out are on the Check-out page.
+        $status = in_array($request->query('status'), ['Cancelled', 'All']) ? $request->query('status') : 'Reserved';
 
         $bookings = Booking::with('room')
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->whereIn('status', $status == 'All' ? ['Reserved', 'Cancelled'] : [$status])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($q) use ($search) {
                     $q->where('guest_name', 'like', "%$search%")
@@ -24,7 +26,8 @@ class BookingController extends Controller
                 });
             })
             ->orderBy('check_in')
-            ->get();
+            ->paginate(Booking::PER_PAGE)
+            ->withQueryString();
 
         return view('bookings.index', [
             'bookings' => $bookings,

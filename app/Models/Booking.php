@@ -31,6 +31,9 @@ class Booking extends Model
         8 => 'Guest Leaves',
     ];
 
+    // rows shown per page in the long tables (Previous / Next buttons go to the rest)
+    const PER_PAGE = 5;
+
     protected $fillable = [
         'guest_name', 'guest_type', 'company', 'contact_no', 'email', 'room_id', 'no_of_guests',
         'check_in', 'check_in_time', 'check_out', 'check_out_time', 'status', 'remarks',

@@ -4,7 +4,7 @@
     <div class="page-head">
         <div>
             <h2>Reservations</h2>
-            <p class="subtitle">Advance bookings. A reserved guest is checked in from the Check-in page when they arrive.</p>
+            <p class="subtitle">Advance bookings only. Once a guest is checked in, their record moves to the Check-out page.</p>
         </div>
         <button type="button" class="primary" onclick="document.getElementById('reservationModal').classList.add('show')">+ New reservation</button>
     </div>
@@ -14,10 +14,9 @@
             <input name="search" value="{{ $search }}" placeholder="Search guest, company or room...">
 
             <select name="status" onchange="this.form.submit()">
-                <option value="">All statuses</option>
-                @foreach (['Reserved', 'Checked In', 'Checking Out', 'Checked Out', 'Cancelled'] as $s)
-                    <option value="{{ $s }}" {{ $status == $s ? 'selected' : '' }}>
-                        {{ $s }}
+                @foreach (['Reserved' => 'Reserved', 'Cancelled' => 'Cancelled', 'All' => 'Reserved and cancelled'] as $value => $label)
+                    <option value="{{ $value }}" {{ $status == $value ? 'selected' : '' }}>
+                        {{ $label }}
                     </option>
                 @endforeach
             </select>
@@ -43,7 +42,7 @@
 
                     @foreach ($bookings as $i => $b)
                         <tr>
-                            <td>{{ $i + 1 }}</td>
+                            <td>{{ $bookings->firstItem() + $i }}</td>
 
                             <td>
                                 <strong>{{ $b->guest_name }}</strong><br>
@@ -93,18 +92,9 @@
                                         </form>
                                     @endif
 
-                                    @if (in_array($b->status, ['Checked In', 'Checking Out']))
-                                        <a
-                                            class="btn primary small"
-                                            href="/checkout/{{ $b->id }}"
-                                        >
-                                            Check out
-                                        </a>
-                                    @endif
-
-                                    @if (in_array($b->status, ['Checked In', 'Checking Out', 'Checked Out']) || ($b->status == 'Reserved' && $b->room->rate !== null))
+                                    @if ($b->status == 'Reserved' && $b->room->rate !== null)
                                         <a class="btn small" href="/billing/{{ $b->id }}">
-                                            {{ in_array($b->status, ['Checked In', 'Checking Out', 'Checked Out']) ? 'View bill' : 'Estimate' }}
+                                            Estimate
                                         </a>
                                     @endif
 
@@ -132,20 +122,18 @@
                                         View
                                     </button>
 
-                                    @if (! in_array($b->status, ['Checked In', 'Checking Out']))
-                                        <form
-                                            method="POST"
-                                            action="/bookings/{{ $b->id }}"
-                                            onsubmit="return confirm('Delete reservation for {{ addslashes($b->guest_name) }}?')"
-                                        >
-                                            @csrf
-                                            @method('DELETE')
+                                    <form
+                                        method="POST"
+                                        action="/bookings/{{ $b->id }}"
+                                        onsubmit="return confirm('Delete reservation for {{ addslashes($b->guest_name) }}?')"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
 
-                                            <button type="submit" class="danger small">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    @endif
+                                        <button type="submit" class="danger small">
+                                            Delete
+                                        </button>
+                                    </form>
 
                                 </div>
                             </td>
@@ -153,6 +141,8 @@
                     @endforeach
                 </table>
             </div>
+
+            {{ $bookings->links('partials.pager') }}
         @endif
     </div>
 

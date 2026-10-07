@@ -452,6 +452,8 @@
                     @endforeach
                 </table>
             </div>
+
+            {{ $current->links('partials.pager') }}
         @endif
     </div>
 

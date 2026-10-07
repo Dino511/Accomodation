@@ -9,7 +9,7 @@
 
 @section('content')
     <h2>Check-out</h2>
-    <p class="subtitle">Guests who are overdue or due today are highlighted so reception can follow up.</p>
+    <p class="subtitle">Guests in house are listed first, then the guests who already checked out.</p>
 
     <div class="stats">
         <div class="stat {{ $overdue->isNotEmpty() ? 'overdue' : '' }}"><b>{{ $overdue->count() }}</b><span>Overdue</span></div>
@@ -34,7 +34,7 @@
         @else
             <div class="table-wrap">
                 <table>
-                    <tr><th>Guest</th><th>Company</th><th>Room</th><th>Expected check-out</th><th>Status</th><th>Progress</th><th></th></tr>
+                    <tr><th>Guest</th><th>Company</th><th>Room</th><th>Checked in</th><th>Expected check-out</th><th>Status</th><th>Progress</th><th></th></tr>
                     @foreach ($current as $b)
                         @php
                             $isOverdue = $b->check_out->lt(today());
@@ -44,6 +44,12 @@
                             <td>{{ $b->guest_name }}</td>
                             <td>{{ $b->company ?: '—' }}</td>
                             <td>{{ $b->room->room_no }}</td>
+                            <td>
+                                {{ $b->check_in->format('M d, Y') }}
+                                @if ($b->check_in_time)
+                                    <br><small class="muted">{{ $b->timeText('check_in_time') }}</small>
+                                @endif
+                            </td>
                             <td>
                                 {{ $b->check_out->format('M d, Y') }}
                                 @if ($isOverdue)
@@ -63,36 +69,67 @@
                                     <span class="muted">Not started</span>
                                 @endif
                             </td>
-                            <td><a class="btn primary small" href="/checkout/{{ $b->id }}">{{ $b->status == 'Checking Out' ? 'Continue check-out' : 'Check out' }}</a></td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn primary small" href="/checkout/{{ $b->id }}">{{ $b->status == 'Checking Out' ? 'Continue check-out' : 'Check out' }}</a>
+                                    <a class="btn small" href="/billing/{{ $b->id }}">View bill</a>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                 </table>
             </div>
-            <p class="hint">Guests currently checked in, or already going through the check-out process.</p>
         @endif
     </div>
 
-    <div class="box">
-        <h3>Recently checked out</h3>
+    <div class="box" id="checked-out">
+        <h3>Checked out</h3>
+        <form class="search-row" method="GET" action="/checkout#checked-out">
+            <input name="search" value="{{ $search }}" placeholder="Search guest, company or room..." aria-label="Search checked-out guests">
+
+            <select name="sort" onchange="this.form.submit()" aria-label="Sort by">
+                @foreach ([
+                    'recent' => 'Most recent first',
+                    'oldest' => 'Oldest first',
+                    'guest' => 'Guest name (A–Z)',
+                    'room' => 'Room',
+                ] as $value => $label)
+                    <option value="{{ $value }}" {{ $sort == $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+
+            <button type="submit">Search</button>
+            @if ($search || $sort != 'recent')
+                <a class="btn" href="/checkout#checked-out">Clear</a>
+            @endif
+        </form>
         @if ($history->isEmpty())
-            <div class="empty">No completed check-outs yet.</div>
+            <div class="empty">{{ $search ? 'No checked-out guests match your search.' : 'No completed check-outs yet.' }}</div>
         @else
             <div class="table-wrap">
                 <table>
-                    <tr><th>Guest</th><th>Room</th><th>Check-in</th><th>Checked out</th><th>Bill total</th><th>Payment</th><th></th></tr>
+                    <tr><th>Guest</th><th>Company</th><th>Room</th><th>Checked in</th><th>Checked out</th><th>Bill total</th><th>Payment</th><th></th></tr>
                     @foreach ($history as $b)
                         <tr>
                             <td>{{ $b->guest_name }}</td>
+                            <td>{{ $b->company ?: '—' }}</td>
                             <td>{{ $b->room->room_no }}</td>
                             <td>{{ $b->check_in->format('M d, Y') }}</td>
                             <td>{{ ($b->actual_check_out ?? $b->check_out)->format('M d, Y') }}</td>
                             <td>₱{{ number_format($b->totalAmount(), 2) }}</td>
-                            <td>{{ $b->paymentStatus() }}</td>
-                            <td><a class="btn small" href="/billing/{{ $b->id }}">View bill</a></td>
+                            <td><span class="badge {{ $b->paymentStatus() == 'Paid' ? 'free' : ($b->paymentStatus() == 'Unpaid' ? 'used' : 'checkout') }}">{{ $b->paymentStatus() }}</span></td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn small" href="/billing/{{ $b->id }}">View bill</a>
+                                    <a class="btn small" href="/checkout/{{ $b->id }}">Details</a>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                 </table>
             </div>
+
+            {{ $history->links('partials.pager') }}
         @endif
     </div>
 @endsection
