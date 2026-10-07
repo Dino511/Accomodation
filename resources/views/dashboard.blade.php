@@ -585,11 +585,18 @@ $attentionRooms = $rooms->whereIn('status', [
 ]);
 @endphp
 
-@if ($attentionRooms->isNotEmpty())
-
+{{-- always shown, like the two boxes above, so the dashboard looks the same every day --}}
 <div class="box">
 
     <h3>Rooms needing attention</h3>
+
+@if ($attentionRooms->isEmpty())
+
+    <div class="empty">
+        No rooms need attention. Every room is Available or Occupied.
+    </div>
+
+@else
 
     <div class="table-wrap">
 
@@ -623,9 +630,9 @@ $attentionRooms = $rooms->whereIn('status', [
         Click a room card above to mark it Available when it is ready.
     </p>
 
-</div>
-
 @endif
+
+</div>
 
 {{-- =====================================================
 ROOM DETAILS AND STATUS MODAL
@@ -681,61 +688,66 @@ ROOM DETAILS AND STATUS MODAL
         document.getElementById('roomModal').classList.remove('show');
     }
 
-    // ---- Room filter (location, status, number of guests) and pages of 12 cards ----
-    const roomsPerPage = 12;
+    // ---- Room filter (location, status, number of guests), one location per page ----
     const roomFilterLocation = document.getElementById('roomFilterLocation');
     const roomFilterStatus = document.getElementById('roomFilterStatus');
     const roomFilterPax = document.getElementById('roomFilterPax');
     let roomPage = 1;
 
     function filterRooms() {
-        const cards = Array.from(document.querySelectorAll('.room-group .room'));
+        const groups = Array.from(document.querySelectorAll('.room-group'));
+        const total = document.querySelectorAll('.room-group .room').length;
+        let matching = 0;
 
-        // 1. which cards match the filters
-        const matching = cards.filter(function (card) {
-            return (! roomFilterLocation.value || card.closest('.room-group').dataset.location === roomFilterLocation.value)
-                && (! roomFilterStatus.value || card.dataset.status === roomFilterStatus.value)
-                && (! roomFilterPax.value || Number(card.dataset.capacity) >= Number(roomFilterPax.value));
-        });
+        // 1. inside every location, show only the cards that match the filters
+        const pagesOfRooms = groups.filter(function (group) {
+            const locationMatches = ! roomFilterLocation.value || group.dataset.location === roomFilterLocation.value;
+            let inGroup = 0;
 
-        // 2. show only the matching cards of the current page
-        const pages = Math.max(1, Math.ceil(matching.length / roomsPerPage));
-        roomPage = Math.min(Math.max(roomPage, 1), pages);
+            group.querySelectorAll('.room').forEach(function (card) {
+                const visible = locationMatches
+                    && (! roomFilterStatus.value || card.dataset.status === roomFilterStatus.value)
+                    && (! roomFilterPax.value || Number(card.dataset.capacity) >= Number(roomFilterPax.value));
 
-        const first = (roomPage - 1) * roomsPerPage;
-        const onPage = matching.slice(first, first + roomsPerPage);
-
-        cards.forEach(function (card) {
-            card.hidden = ! onPage.includes(card);
-        });
-
-        // 3. a location with no card on this page is hidden; its count is all its matching rooms
-        document.querySelectorAll('.room-group').forEach(function (group) {
-            const inGroup = matching.filter(function (card) {
-                return group.contains(card);
-            }).length;
-
-            group.hidden = ! onPage.some(function (card) {
-                return group.contains(card);
+                card.hidden = ! visible;
+                inGroup += visible ? 1 : 0;
             });
 
+            group.dataset.shown = inGroup;
             group.querySelector('.room-group-title small').textContent = inGroup + (inGroup === 1 ? ' room' : ' rooms');
+            matching += inGroup;
+
+            return inGroup > 0;
+        });
+
+        // 2. one location per page: all of its matching rooms are shown together
+        const pages = Math.max(1, pagesOfRooms.length);
+        roomPage = Math.min(Math.max(roomPage, 1), pages);
+
+        const current = pagesOfRooms[roomPage - 1];
+
+        groups.forEach(function (group) {
+            group.hidden = group !== current;
         });
 
         const filtered = roomFilterLocation.value !== '' || roomFilterStatus.value !== '' || roomFilterPax.value !== '';
 
-        document.getElementById('roomFilterCount').textContent = matching.length === 0
+        document.getElementById('roomFilterCount').textContent = ! current
             ? ''
-            : 'Showing ' + (first + 1) + '–' + (first + onPage.length) + ' of ' + matching.length
-                + (filtered ? ' matching rooms (' + cards.length + ' in total).' : ' rooms.');
+            : 'Showing ' + current.dataset.shown + (filtered ? ' matching' : '') + (current.dataset.shown === '1' ? ' room' : ' rooms')
+                + ' in ' + current.dataset.location + ' (' + (filtered ? matching + ' matching, ' : '') + total + ' rooms in total).';
 
-        document.getElementById('roomFilterEmpty').hidden = matching.length > 0;
+        document.getElementById('roomFilterEmpty').hidden = matching > 0;
         document.getElementById('roomFilterClear').hidden = ! filtered;
 
         document.getElementById('roomPager').hidden = pages === 1;
-        document.getElementById('roomPageText').textContent = 'Page ' + roomPage + ' of ' + pages;
+        document.getElementById('roomPageText').textContent = current
+            ? current.dataset.location + ' · location ' + roomPage + ' of ' + pages
+            : '';
         document.getElementById('roomPrev').disabled = roomPage === 1;
         document.getElementById('roomNext').disabled = roomPage === pages;
+        document.getElementById('roomPrev').textContent = roomPage === 1 ? '‹ Previous' : '‹ ' + pagesOfRooms[roomPage - 2].dataset.location;
+        document.getElementById('roomNext').textContent = roomPage === pages ? 'Next ›' : pagesOfRooms[roomPage].dataset.location + ' ›';
 
         // remember the choice while this tab is open
         try {
