@@ -80,7 +80,7 @@ class Room extends Model
         $rates = [
             'Per night' => $this->rate,
             'Per hour' => $this->rate_hourly,
-            'Day tour' => $this->rate_daytour,
+            'Daily' => $this->rate_daytour,
         ];
 
         $configured = [];

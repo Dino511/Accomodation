@@ -248,100 +248,155 @@ CHECK-OUT ALERTS
 ROOMS
 ===================================================== --}}
 
-<div class="box">
-<h3>Rooms</h3>
+<div class="box" id="rooms">
+    <h3>Rooms</h3>
 
-<p class="flow" style="margin:0 0 12px">
-
-    Room status flow:
-
-    <span class="badge used">Occupied</span>
-    <span class="arrow">→</span>
-
-    <span class="badge checkout">Check-out</span>
-    <span class="arrow">→</span>
-
-    <span class="badge inspection">Inspection</span>
-    <span class="arrow">→</span>
-
-    <span class="badge clean">
-        Cleaning / Maintenance
-    </span>
-
-    <span class="arrow">→</span>
-
-    <span class="badge free">Available</span>
-
-</p>
-
-@foreach ($rooms->groupBy('location.name') as $location => $list)
-
-    <p style="margin:12px 0 6px">
-        <b>{{ $location }}</b>
+    <p class="flow" style="margin:0 0 12px">
+        Room status flow:
+        <span class="badge used">Occupied</span>
+        <span class="arrow">→</span>
+        <span class="badge checkout">Check-out</span>
+        <span class="arrow">→</span>
+        <span class="badge inspection">Inspection</span>
+        <span class="arrow">→</span>
+        <span class="badge clean">Cleaning / Maintenance</span>
+        <span class="arrow">→</span>
+        <span class="badge free">Available</span>
     </p>
 
-    <div class="rooms">
+    {{-- filter the room cards without reloading the page --}}
+    <div class="search-row">
+        <select id="roomFilterLocation" aria-label="Filter rooms by location">
+            <option value="">All locations ({{ $rooms->count() }})</option>
+            @foreach ($rooms->groupBy('location.name') as $location => $list)
+                <option value="{{ $location }}">{{ $location }} ({{ $list->count() }})</option>
+            @endforeach
+        </select>
 
-        @foreach ($list as $room)
+        <select id="roomFilterStatus" aria-label="Filter rooms by status">
+            <option value="">All statuses</option>
+            @foreach (App\Models\Room::STATUSES as $status)
+                <option value="{{ $status }}">{{ $status }} ({{ $rooms->where('status', $status)->count() }})</option>
+            @endforeach
+        </select>
 
-            @php
-                $guest = $guests[$room->id] ?? null;
-            @endphp
+        <select id="roomFilterPax" aria-label="Filter rooms by number of guests">
+            <option value="">Any number of guests</option>
+            @foreach ($rooms->pluck('capacity')->map(fn ($pax) => (int) $pax)->unique()->sort() as $pax)
+                <option value="{{ $pax }}">Good for {{ $pax }} or more ({{ $rooms->where('capacity', '>=', $pax)->count() }})</option>
+            @endforeach
+        </select>
 
-            <button
-                type="button"
-                class="room {{ $room->css() }}"
-                onclick="roomClicked(
-                    {{ $room->id }},
-                    @js($room->room_no),
-                    @js($room->status),
-                    {{ $guest ? $guest->id : 'null' }},
-                    @js($room->location->name),
-                    {{ $room->capacity }},
-                    @js($room->rates()),
-                    @js($room->inclusionsList()),
-                    @js($guest ? $guest->guest_name : null)
-                )"
-            >
+        <button type="button" id="roomFilterClear" hidden>Clear</button>
+    </div>
 
-                <div class="room-name">
-                    {{ $room->room_no }}
-                </div>
+    <p class="hint" id="roomFilterCount" style="margin:0 0 4px"></p>
 
-                <span class="badge {{ $room->css() }}">
-                    {{ $room->status }}
-                </span>
+    @foreach ($rooms->groupBy('location.name') as $location => $list)
 
-                <small>
-                    {{ $guest
-                        ? $guest->guest_name
-                        : 'Good for '.$room->capacity
-                    }}
-                </small>
+        <div class="room-group" data-location="{{ $location }}">
 
-                <div class="room-rates" aria-label="Room rates">
-                    <span class="room-rates-title">Rates</span>
-                    @forelse ($room->rates() as $label => $rate)
-                        <span class="room-rate">
-                            <span>{{ $label }}</span>
-                            <b>₱{{ number_format((float) $rate, 2) }}</b>
+            <p class="room-group-title">
+                <b>{{ $location }}</b>
+                <small class="muted"></small>
+            </p>
+
+            <div class="rooms">
+
+                @foreach ($list as $room)
+
+                    @php
+                        $guest = $guests[$room->id] ?? null;
+                    @endphp
+
+                    {{-- the whole card opens the room details; the button goes straight to check-in or check-out --}}
+                    <div
+                        class="room {{ $room->css() }}"
+                        data-status="{{ $room->status }}"
+                        data-capacity="{{ $room->capacity }}"
+                        role="button"
+                        tabindex="0"
+                        onkeydown="if (event.key === 'Enter' && event.target === this) this.click()"
+                        onclick="roomClicked(
+                            {{ $room->id }},
+                            @js($room->room_no),
+                            @js($room->status),
+                            {{ $guest ? $guest->id : 'null' }},
+                            @js($room->location->name),
+                            {{ $room->capacity }},
+                            @js($room->rates()),
+                            @js($room->inclusionsList()),
+                            @js($guest ? $guest->guest_name : null)
+                        )"
+                    >
+
+                        <div class="room-name">
+                            {{ $room->room_no }}
+                        </div>
+
+                        <span class="badge {{ $room->css() }}">
+                            {{ $room->status }}
                         </span>
-                    @empty
-                        <span class="room-rate">No rates set</span>
-                    @endforelse
-                </div>
 
-                @if ($room->inclusionsList())
-                    <small class="room-card-inclusions">{{ implode(' · ', $room->inclusionsList()) }}</small>
-                @endif
+                        <small>
+                            {{ $guest ? $guest->guest_name : 'Good for '.$room->capacity }}
+                        </small>
 
-            </button>
+                        <div class="room-rates" aria-label="Room rates">
+                            <span class="room-rates-title">Rates</span>
+                            @forelse ($room->rates() as $label => $rate)
+                                <span class="room-rate">
+                                    <span>{{ $label }}</span>
+                                    <b>₱{{ number_format((float) $rate, 2) }}</b>
+                                </span>
+                            @empty
+                                <span class="room-rate">No rates set</span>
+                            @endforelse
+                        </div>
 
-        @endforeach
+                        <div class="room-foot">
+                            <small class="room-card-inclusions">{{ implode(' · ', $room->inclusionsList()) }}</small>
+
+                            @if ($room->status == 'Available')
+                                <a class="btn success-btn small" href="/checkin?room={{ $room->id }}" onclick="event.stopPropagation()">
+                                    Get room
+                                </a>
+                            @elseif ($guest)
+                                <a class="btn primary small" href="/checkout/{{ $guest->id }}" onclick="event.stopPropagation()">
+                                    Check out
+                                </a>
+                            @endif
+                        </div>
+
+                    </div>
+
+                @endforeach
+
+            </div>
+
+        </div>
+
+    @endforeach
+
+    <div class="pager" id="roomPager" hidden>
+
+        <span class="muted" id="roomPageText"></span>
+
+
+        <div class="actions">
+
+            <button type="button" class="small" id="roomPrev">‹ Previous</button>
+
+            <button type="button" class="small" id="roomNext">Next ›</button>
+
+        </div>
 
     </div>
 
-@endforeach
+
+    <div class="empty" id="roomFilterEmpty" hidden>
+        No rooms match this filter.
+    </div>
 
 </div>
 {{-- =====================================================
@@ -625,6 +680,110 @@ ROOM DETAILS AND STATUS MODAL
     function closeRoomModal() {
         document.getElementById('roomModal').classList.remove('show');
     }
+
+    // ---- Room filter (location, status, number of guests) and pages of 12 cards ----
+    const roomsPerPage = 12;
+    const roomFilterLocation = document.getElementById('roomFilterLocation');
+    const roomFilterStatus = document.getElementById('roomFilterStatus');
+    const roomFilterPax = document.getElementById('roomFilterPax');
+    let roomPage = 1;
+
+    function filterRooms() {
+        const cards = Array.from(document.querySelectorAll('.room-group .room'));
+
+        // 1. which cards match the filters
+        const matching = cards.filter(function (card) {
+            return (! roomFilterLocation.value || card.closest('.room-group').dataset.location === roomFilterLocation.value)
+                && (! roomFilterStatus.value || card.dataset.status === roomFilterStatus.value)
+                && (! roomFilterPax.value || Number(card.dataset.capacity) >= Number(roomFilterPax.value));
+        });
+
+        // 2. show only the matching cards of the current page
+        const pages = Math.max(1, Math.ceil(matching.length / roomsPerPage));
+        roomPage = Math.min(Math.max(roomPage, 1), pages);
+
+        const first = (roomPage - 1) * roomsPerPage;
+        const onPage = matching.slice(first, first + roomsPerPage);
+
+        cards.forEach(function (card) {
+            card.hidden = ! onPage.includes(card);
+        });
+
+        // 3. a location with no card on this page is hidden; its count is all its matching rooms
+        document.querySelectorAll('.room-group').forEach(function (group) {
+            const inGroup = matching.filter(function (card) {
+                return group.contains(card);
+            }).length;
+
+            group.hidden = ! onPage.some(function (card) {
+                return group.contains(card);
+            });
+
+            group.querySelector('.room-group-title small').textContent = inGroup + (inGroup === 1 ? ' room' : ' rooms');
+        });
+
+        const filtered = roomFilterLocation.value !== '' || roomFilterStatus.value !== '' || roomFilterPax.value !== '';
+
+        document.getElementById('roomFilterCount').textContent = matching.length === 0
+            ? ''
+            : 'Showing ' + (first + 1) + '–' + (first + onPage.length) + ' of ' + matching.length
+                + (filtered ? ' matching rooms (' + cards.length + ' in total).' : ' rooms.');
+
+        document.getElementById('roomFilterEmpty').hidden = matching.length > 0;
+        document.getElementById('roomFilterClear').hidden = ! filtered;
+
+        document.getElementById('roomPager').hidden = pages === 1;
+        document.getElementById('roomPageText').textContent = 'Page ' + roomPage + ' of ' + pages;
+        document.getElementById('roomPrev').disabled = roomPage === 1;
+        document.getElementById('roomNext').disabled = roomPage === pages;
+
+        // remember the choice while this tab is open
+        try {
+            sessionStorage.setItem('roomFilter', JSON.stringify([roomFilterLocation.value, roomFilterStatus.value, roomFilterPax.value, roomPage]));
+        } catch (error) {}
+    }
+
+    // a new filter starts again from page 1
+    function roomFilterChanged() {
+        roomPage = 1;
+        filterRooms();
+    }
+
+    function roomPageChanged(step) {
+        roomPage += step;
+        filterRooms();
+        document.getElementById('rooms').scrollIntoView();
+    }
+
+    try {
+        const saved = JSON.parse(sessionStorage.getItem('roomFilter') || '[]');
+
+        roomFilterLocation.value = saved[0] || '';
+        roomFilterStatus.value = saved[1] || '';
+        roomFilterPax.value = saved[2] || '';
+        roomPage = Number(saved[3]) || 1;
+    } catch (error) {}
+
+    roomFilterLocation.addEventListener('change', roomFilterChanged);
+    roomFilterStatus.addEventListener('change', roomFilterChanged);
+    roomFilterPax.addEventListener('change', roomFilterChanged);
+
+    document.getElementById('roomPrev').addEventListener('click', function () {
+        roomPageChanged(-1);
+    });
+
+    document.getElementById('roomNext').addEventListener('click', function () {
+        roomPageChanged(1);
+    });
+
+    document.getElementById('roomFilterClear').addEventListener('click', function () {
+        roomFilterLocation.value = '';
+        roomFilterStatus.value = '';
+        roomFilterPax.value = '';
+        roomFilterChanged();
+    });
+
+    filterRooms();
 
     function roomClicked(id, name, status, bookingId, locationName, capacity, rates, inclusions, guestName) {
         const modal = document.getElementById('roomModal');

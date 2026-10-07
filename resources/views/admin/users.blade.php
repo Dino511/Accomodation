@@ -56,12 +56,12 @@
                         <td>
                             <div class="actions">
                                 <a class="btn small" href="/admin/users/{{ $user->id }}/edit">Edit</a>
-                                <form method="POST" action="/admin/users/{{ $user->id }}/password-link" onsubmit="return confirm('Email {{ addslashes($user->name) }} a link to set a new password?')">
+                                <form method="POST" action="/admin/users/{{ $user->id }}/password-link" data-confirm="Email {{ $user->name }} a link to set a new password?">
                                     @csrf
                                     <button type="submit" class="small">Send password link</button>
                                 </form>
                                 @if ($user->id != auth()->id())
-                                    <form method="POST" action="/admin/users/{{ $user->id }}/toggle" onsubmit="return confirm('{{ $user->active ? 'Deactivate' : 'Activate' }} {{ addslashes($user->name) }}?')">
+                                    <form method="POST" action="/admin/users/{{ $user->id }}/toggle" data-confirm="{{ $user->active ? 'Deactivate' : 'Activate' }} {{ $user->name }}?">
                                         @csrf
                                         <button type="submit" class="small {{ $user->active ? 'danger' : 'success-btn' }}">{{ $user->active ? 'Deactivate' : 'Activate' }}</button>
                                     </form>

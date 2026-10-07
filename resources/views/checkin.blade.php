@@ -4,9 +4,16 @@
     <h2>Check-in</h2>
     <p class="subtitle">One step at a time. The guest is at reception (steps 1 and 2 are done). Click a step above to go back to it.</p>
 
+    @if ($roomId && $rooms->firstWhere('id', $roomId))
+
+        <p class="note" style="margin:0 0 16px">Room <b>{{ $rooms->firstWhere('id', $roomId)->room_no }}</b> ({{ $rooms->firstWhere('id', $roomId)->location->name }}) is already chosen for this check-in. You can change it in step 6.</p>
+
+    @endif
+
+
     @include('partials.steps', ['steps' => App\Models\Booking::CHECKIN_STEPS, 'current' => 3])
 
-    <form method="POST" action="/checkin" id="checkinForm">
+    <form method="POST" action="/checkin" id="checkinForm" autocomplete="off">
         @csrf
 
         {{-- STEP 3 --}}
@@ -282,6 +289,17 @@
                 <h3>Assign accommodation (Guest Villa / Barracks)</h3>
             </div>
 
+            @php
+                // Start on a rate the chosen room really offers. Rooms that do not
+                // offer the selected rate are unselected by the script below.
+                $chosenRoom = $rooms->firstWhere('id', old('room_id', optional($selected)->room_id ?? $roomId));
+                $defaultRate = 'nightly';
+
+                if ($chosenRoom && $chosenRoom->rate === null) {
+                    $defaultRate = $chosenRoom->rate_hourly !== null ? 'hourly' : 'daytour';
+                }
+            @endphp
+
             <label for="billing_rate_type">Rate type <span class="req">*</span></label>
             <select
                 id="billing_rate_type"
@@ -289,8 +307,8 @@
                 data-start-at="{{ $selected ? $selected->check_in->format('Y-m-d').'T'.substr($selected->check_in_time ?: '14:00', 0, 5) : now()->format('Y-m-d\TH:i') }}"
                 required
             >
-                @foreach (['nightly' => 'Per night', 'hourly' => 'Per hour', 'daytour' => 'Day tour'] as $value => $label)
-                    <option value="{{ $value }}" @selected(old('billing_rate_type', 'nightly') === $value)>{{ $label }}</option>
+                @foreach (['nightly' => 'Per night', 'hourly' => 'Per hour', 'daytour' => 'Daily'] as $value => $label)
+                    <option value="{{ $value }}" @selected(old('billing_rate_type', $defaultRate) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
             <p class="hint">Choose the rate that applies to this stay. Every room assigned to the group must offer this rate.</p>
@@ -315,7 +333,7 @@
                                 data-inclusions="{{ json_encode($room->inclusionsList()) }}"
                                 data-location="{{ $room->location->name }}"
                                 data-location="{{ $room->location->name }}"
-                                {{ old('room_id', optional($selected)->room_id) == $room->id ? 'selected' : '' }}
+                                {{ old('room_id', optional($selected)->room_id ?? $roomId) == $room->id ? 'selected' : '' }}
                             >
                                 {{ $room->room_no }} (good for {{ $room->capacity }}) — {{ $room->rateSummary() }}
                             </option>
@@ -545,11 +563,10 @@
 
         function applyRateAvailability() {
             Array.from(roomSelect.options).forEach(function (option) {
+                // The chosen room is never unselected: when it does not offer the
+                // rate, checkRooms() explains which rates it has instead.
                 if (option.value !== '') {
-                    option.disabled = ! supportsSelectedRate(option);
-                    if (option.disabled && option.selected) {
-                        roomSelect.value = '';
-                    }
+                    option.disabled = ! supportsSelectedRate(option) && ! option.selected;
                 }
             });
 
@@ -615,7 +632,7 @@
                 capacity.textContent = 'Capacity: ' + room.dataset.capacity + ' guests';
                 const selectedRate = document.createElement('span');
                 selectedRate.textContent = '₱' + Number(rateAttribute(room)).toFixed(2) + ' / '
-                    + (rateType.value === 'hourly' ? 'hour' : rateType.value === 'daytour' ? 'day tour' : 'night');
+                    + (rateType.value === 'hourly' ? 'hour' : rateType.value === 'daytour' ? 'day' : 'night');
                 const includes = document.createElement('span');
                 const roomInclusions = inclusionsFor(room);
                 includes.textContent = roomInclusions.length ? 'Inclusions: ' + roomInclusions.join(' · ') : 'No inclusions listed';
@@ -683,6 +700,29 @@
                 return;
             }
 
+            // the room stays chosen, but it cannot be billed at a rate it does not offer
+            if (! supportsSelectedRate(main)) {
+                const rateLabels = { nightly: 'Per night', hourly: 'Per hour', daytour: 'Daily' };
+                const offered = Object.keys(rateLabels)
+                    .filter(function (type) {
+                        return main.dataset['rate' + type.charAt(0).toUpperCase() + type.slice(1)];
+                    })
+                    .map(function (type) {
+                        return rateLabels[type] + ' (₱' + Number(main.dataset['rate' + type.charAt(0).toUpperCase() + type.slice(1)]).toFixed(2) + ')';
+                    });
+
+                const message = 'No ' + rateLabels[rateType.value].toLowerCase() + ' rate is available for ' + main.dataset.name + '. '
+                    + (offered.length ? 'Rates available for this room: ' + offered.join(', ') + '.' : 'This room has no rates set.');
+
+                roomSelect.setCustomValidity(message);
+                roomAdvice.className = 'alert error';
+                roomAdvice.textContent = message + ' Choose one of those rate types to continue, or pick another room.';
+                roomAdvice.hidden = false;
+                extraBox.hidden = true;
+                updateEstimate();
+                return;
+            }
+
             const mainBox = extraChecks.find(function (box) { return box.value === mainId; });
             const mainCapacity = Number(mainBox.dataset.capacity);
             const ticked = extraChecks.filter(function (box) { return box.checked; });
@@ -736,7 +776,10 @@
             updateEstimate();
         }
 
-        roomSelect.addEventListener('change', checkRooms);
+        roomSelect.addEventListener('change', function () {
+            applyRateAvailability();
+            checkRooms();
+        });
         rateType.addEventListener('change', function () {
             applyRateAvailability();
             checkRooms();
@@ -747,6 +790,28 @@
         checkOutTime.addEventListener('change', updateEstimate);
         applyRateAvailability();
         checkRooms();
+
+        // The room picked with "Get room" must stay selected. A browser can put back
+        // an older (empty) choice when the page is reloaded or reopened with Back.
+        const chosenRoomId = '{{ (int) $roomId ?: '' }}';
+
+        window.addEventListener('pageshow', function () {
+            const option = chosenRoomId ? roomSelect.querySelector('option[value="' + chosenRoomId + '"]') : null;
+
+            if (option && ! roomSelect.value) {
+                // switch to a rate this room offers, so the room is allowed
+                if (! supportsSelectedRate(option)) {
+                    rateType.value = ['nightly', 'hourly', 'daytour'].find(function (type) {
+                        return option.dataset['rate' + type.charAt(0).toUpperCase() + type.slice(1)];
+                    }) || rateType.value;
+
+                    applyRateAvailability();
+                }
+
+                roomSelect.value = chosenRoomId;
+                checkRooms();
+            }
+        });
 
         // ---- One step on screen at a time (steps 3 to 6) ----
         const form = document.getElementById('checkinForm');

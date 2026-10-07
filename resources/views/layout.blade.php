@@ -64,5 +64,94 @@
 
         @yield('content')
     </main>
+
+    {{-- "Are you sure?" pop-up. A form with data-confirm="question" shows it before it is sent.
+         {field} in the question is replaced with what is typed in that field of the form.
+         data-confirm-ok="text" changes the text of the confirm button (default: the text of the clicked button). --}}
+    <div class="modal" id="confirmModal">
+        <div class="modal-box confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+            <h3 id="confirmTitle">Please confirm</h3>
+            <p id="confirmMessage"></p>
+            <div class="actions">
+                <button type="button" class="primary" id="confirmOk">Confirm</button>
+                <button type="button" id="confirmCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('confirmModal');
+            const okButton = document.getElementById('confirmOk');
+            let waitingForm = null;
+            let cameFrom = null;
+
+            function closeConfirm() {
+                modal.classList.remove('show');
+                waitingForm = null;
+
+                if (cameFrom) {
+                    cameFrom.focus();
+                }
+            }
+
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+
+                if (! form.dataset.confirm) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                // amounts typed in the form are shown as 1,234.50
+                document.getElementById('confirmMessage').textContent = form.dataset.confirm.replace(/\{(\w+)\}/g, function (whole, name) {
+                    const field = form.elements[name];
+
+                    if (! field) {
+                        return whole;
+                    }
+
+                    return field.type === 'number'
+                        ? Number(field.value).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : field.value;
+                });
+
+                // the confirm button looks and reads like the button that was clicked
+                const submitButton = event.submitter || form.querySelector('[type="submit"]');
+
+                okButton.textContent = form.dataset.confirmOk || (submitButton ? submitButton.textContent.trim() : 'Confirm');
+                okButton.className = ['danger', 'success-btn'].find(function (style) {
+                    return submitButton && submitButton.classList.contains(style);
+                }) || 'primary';
+
+                waitingForm = form;
+                cameFrom = submitButton;
+                modal.classList.add('show');
+                okButton.focus();
+            });
+
+            okButton.addEventListener('click', function () {
+                if (waitingForm) {
+                    okButton.disabled = true;
+                    waitingForm.submit();
+                }
+            });
+
+            document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
+
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeConfirm();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal.classList.contains('show')) {
+                    closeConfirm();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class RoomController extends Controller
 {
@@ -103,15 +104,20 @@ class RoomController extends Controller
     {
         $location = $request->query('location');
 
+        $rooms = Room::listed()
+            ->when($location, fn ($rooms) => $rooms->where('location_id', $location));
+
+        // 10 rooms per page, with Previous / Next under the table
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
         return view('rooms.index', [
-            'rooms' => Room::listed()
-                ->when(
-                    $location,
-                    fn ($rooms) => $rooms->where(
-                        'location_id',
-                        $location
-                    )
-                ),
+            'rooms' => new LengthAwarePaginator(
+                $rooms->forPage($page, 10)->values(),
+                $rooms->count(),
+                10,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            ),
 
             'locations' => Location::orderBy('name')->get(),
 
@@ -303,7 +309,7 @@ class RoomController extends Controller
                 'capacity' => 'room capacity',
                 'rate' => 'nightly rate',
                 'rate_hourly' => 'hourly rate',
-                'rate_daytour' => 'day-tour rate',
+                'rate_daytour' => 'daily rate',
                 'inclusions' => 'room inclusions',
             ]
         );

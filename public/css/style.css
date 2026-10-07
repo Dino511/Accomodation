@@ -784,7 +784,6 @@ a.btn:active {
     display: block;
 
     width: 100%;
-    min-height: 120px;
 
     padding: 13px;
 
@@ -801,21 +800,13 @@ a.btn:active {
 
     text-align: left;
 
-    cursor: pointer;
-
-    transition:
-        box-shadow .15s ease,
-        transform .1s ease;
+    transition: box-shadow .15s ease;
 }
 
 .room:hover {
     background: #fff;
 
     box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
-}
-
-.room:active {
-    transform: translateY(1px);
 }
 
 .room.free {
@@ -2531,4 +2522,149 @@ button {
 
 .password-toggle.on .slash {
     display: inline;
+}
+
+/* =========================================================
+   ROOM CARDS ON THE DASHBOARD (name + status, details, buttons)
+   ========================================================= */
+
+.room-group-title {
+    margin: 14px 0 6px;
+}
+
+.room-group-title small {
+    margin-left: 6px;
+}
+
+.room {
+    cursor: pointer;
+}
+
+/* bottom of the card: inclusions on the left, the button in the bottom right corner */
+.room-foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-top: 7px;
+    padding-top: 7px;
+
+    border-top: 1px solid var(--border);
+}
+
+.room-foot .room-card-inclusions {
+    flex: 1;
+    min-width: 0;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+}
+
+.room-foot .btn {
+    flex-shrink: 0;
+}
+
+button:disabled {
+    opacity: .45;
+
+    cursor: default;
+}
+
+/* =========================================================
+   CHECK-OUT STEP 5: BILL SUMMARY AND PAYMENT
+   ========================================================= */
+
+.bill-summary,
+.payment-form {
+    max-width: 480px;
+}
+
+.bill-summary {
+    overflow: hidden;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.bill-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 9px 13px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.bill-row:last-child {
+    border-bottom: 0;
+}
+
+.bill-row.total {
+    background: #f8fafc;
+}
+
+.bill-row.balance {
+    background: var(--teal-light);
+    color: var(--nav);
+
+    font-size: 15px;
+}
+
+.payment-form {
+    margin-top: 6px;
+}
+
+.payment-row {
+    display: flex;
+    align-items: stretch;
+
+    gap: 8px;
+}
+
+.payment-row .input-with-prefix {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 500px) {
+
+    .payment-row {
+        flex-direction: column;
+    }
+}
+
+/* =========================================================
+   CONFIRM POP-UP (replaces the browser's own "OK / Cancel" box)
+   ========================================================= */
+
+.confirm-box {
+    max-width: 420px;
+
+    padding: 24px;
+}
+
+.confirm-box h3 {
+    margin: 0 0 8px;
+}
+
+.confirm-box p {
+    margin: 0 0 20px;
+
+    color: var(--text);
+
+    font-size: 15px;
+    line-height: 1.5;
+
+    overflow-wrap: anywhere;
+}
+
+.confirm-box .actions {
+    justify-content: flex-end;
 }

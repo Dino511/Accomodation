@@ -64,14 +64,14 @@
                     </div>
                 </div>
                 <div>
-                    <label for="rate_daytour">Day tour</label>
+                    <label for="rate_daytour">Daily</label>
                     <div class="input-with-prefix">
                         <span>₱</span>
                         <input id="rate_daytour" name="rate_daytour" type="number" min="0" step="0.01" value="{{ old('rate_daytour', $room->rate_daytour ?? '') }}" placeholder="0.00">
                     </div>
                 </div>
             </div>
-            <p class="hint">Enter the rates this room offers. At least one rate is required; per night, per hour, and day tour can be left empty individually.</p>
+            <p class="hint">Enter the rates this room offers. At least one rate is required; per night, per hour, and daily can be left empty individually.</p>
         </div>
 
         <div class="box">

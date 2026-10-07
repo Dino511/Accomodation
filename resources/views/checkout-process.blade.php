@@ -119,20 +119,28 @@
     <div class="box step {{ $state(5) }}">
         <div class="step-title"><span class="num">{{ $current > 5 ? '✓' : 5 }}</span><h3>Billing and payment</h3></div>
         @if ($current == 5)
-            <dl class="details">
-                <div><dt>Accommodation</dt><dd>₱{{ number_format($booking->accommodationCharge(), 2) }}</dd></div>
-                <div><dt>Additional charges</dt><dd>₱{{ number_format($booking->additionalChargeTotal(), 2) }}</dd></div>
-                <div><dt>Total amount</dt><dd><b>₱{{ number_format($booking->totalAmount(), 2) }}</b></dd></div>
-                <div><dt>Amount paid</dt><dd>₱{{ number_format((float) $booking->amount_paid, 2) }}</dd></div>
-                <div><dt>Balance</dt><dd><b>₱{{ number_format($booking->balance(), 2) }}</b></dd></div>
-            </dl>
-            <p>Payment status: <b>{{ $booking->paymentStatus() }}</b></p>
-            <form method="POST" action="/checkout/{{ $booking->id }}/settle" onsubmit="return confirm('Record this payment?')">
+            <div class="bill-summary">
+                <div class="bill-row"><span>Accommodation</span><span>₱{{ number_format($booking->accommodationCharge(), 2) }}</span></div>
+                <div class="bill-row"><span>Additional charges</span><span>₱{{ number_format($booking->additionalChargeTotal(), 2) }}</span></div>
+                <div class="bill-row total"><span>Total amount</span><b>₱{{ number_format($booking->totalAmount(), 2) }}</b></div>
+                <div class="bill-row"><span>Amount paid</span><span>₱{{ number_format((float) $booking->amount_paid, 2) }}</span></div>
+                <div class="bill-row balance">
+                    <span>Balance due <span class="badge {{ $booking->paymentStatus() == 'Paid' ? 'free' : ($booking->paymentStatus() == 'Unpaid' ? 'used' : 'checkout') }}">{{ $booking->paymentStatus() }}</span></span>
+                    <b>₱{{ number_format($booking->balance(), 2) }}</b>
+                </div>
+            </div>
+
+            <form class="payment-form" method="POST" action="/checkout/{{ $booking->id }}/settle" data-confirm="Record a payment of ₱{amount} from {{ $booking->guest_name }}?">
                 @csrf
-                <label for="payment_amount">Payment received (₱)</label>
-                <input id="payment_amount" name="amount" type="number" min="0.01" max="{{ number_format($booking->balance(), 2, '.', '') }}" step="0.01" value="{{ old('amount', number_format($booking->balance(), 2, '.', '')) }}" required>
-                <button type="submit" class="success-btn">Record payment</button>
-                <p class="hint">Full payment is required before reception can return the ID. Partial payments remain on the bill.</p>
+                <label for="payment_amount">Payment received <span class="req">*</span></label>
+                <div class="payment-row">
+                    <div class="input-with-prefix">
+                        <span>₱</span>
+                        <input id="payment_amount" name="amount" type="number" min="0.01" max="{{ number_format($booking->balance(), 2, '.', '') }}" step="0.01" value="{{ old('amount', number_format($booking->balance(), 2, '.', '')) }}" required>
+                    </div>
+                    <button type="submit" class="success-btn">Record payment</button>
+                </div>
+                <p class="hint">Full payment is required before reception can return the ID. A partial payment stays on the bill.</p>
             </form>
         @elseif ($current > 5)
             <p class="muted" style="margin:0">Paid in full: ₱{{ number_format($booking->totalAmount(), 2) }}.</p>
@@ -161,7 +169,7 @@
     <div class="box step {{ $state(7, 8) }}">
         <div class="step-title"><span class="num">{{ $current > 8 ? '✓' : 7 }}</span><h3>Record check-out in guest log</h3></div>
         @if ($current == 7)
-            <form method="POST" action="/checkout/{{ $booking->id }}/record" onsubmit="return confirm('Record the check-out of {{ addslashes($booking->guest_name) }}?')">
+            <form method="POST" action="/checkout/{{ $booking->id }}/record" data-confirm="Record the check-out of {{ $booking->guest_name }}?">
                 @csrf
                 <label for="checkout_notes">Final notes</label>
                 <input id="checkout_notes" name="checkout_notes" placeholder="Optional">

@@ -110,7 +110,7 @@ class Booking extends Model
         return [
             'nightly' => 'Per night',
             'hourly' => 'Per hour',
-            'daytour' => 'Day tour',
+            'daytour' => 'Daily',
         ][$this->billingRateType()] ?? 'Per night';
     }
 

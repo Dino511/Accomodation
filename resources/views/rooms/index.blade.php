@@ -35,7 +35,7 @@
                             <td>
                                 <div class="actions">
                                     <a class="btn small" href="/rooms/{{ $room->id }}/edit">Edit</a>
-                                    <form method="POST" action="/rooms/{{ $room->id }}" onsubmit="return confirm('Delete {{ addslashes($room->room_no) }}?')">
+                                    <form method="POST" action="/rooms/{{ $room->id }}" data-confirm="Delete {{ $room->room_no }}?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="danger small">Delete</button>
@@ -46,6 +46,8 @@
                     @endforeach
                 </table>
             </div>
+
+            {{ $rooms->links('partials.pager') }}
         @endif
     </div>
 @endsection

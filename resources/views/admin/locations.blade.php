@@ -52,7 +52,7 @@
                                 <div class="actions">
                                     <a class="btn small" href="/rooms/create?location={{ $location->id }}">+ Add room</a>
                                     <a class="btn small" href="/admin/locations/{{ $location->id }}/edit">Edit</a>
-                                    <form method="POST" action="/admin/locations/{{ $location->id }}" onsubmit="return confirm('Delete {{ addslashes($location->name) }}?')">
+                                    <form method="POST" action="/admin/locations/{{ $location->id }}" data-confirm="Delete {{ $location->name }}?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="danger small">Delete</button>

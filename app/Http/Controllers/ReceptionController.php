@@ -27,6 +27,9 @@ class ReceptionController extends Controller
 
             'selected' => $selected,
 
+            // the room picked with "Get room" on the dashboard
+            'roomId' => $request->query('room'),
+
             'current' => Booking::with('room')
                 ->where('status', 'Checked In')
                 ->orderBy('check_out')

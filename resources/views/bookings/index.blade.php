@@ -83,7 +83,7 @@
                                         <form
                                             method="POST"
                                             action="/bookings/{{ $b->id }}/cancel"
-                                            onsubmit="return confirm('Cancel reservation for {{ addslashes($b->guest_name) }}?')"
+                                            data-confirm="Cancel reservation for {{ $b->guest_name }}?" data-confirm-ok="Cancel reservation"
                                         >
                                             @csrf
                                             <button type="submit" class="danger small">
@@ -125,7 +125,7 @@
                                     <form
                                         method="POST"
                                         action="/bookings/{{ $b->id }}"
-                                        onsubmit="return confirm('Delete reservation for {{ addslashes($b->guest_name) }}?')"
+                                        data-confirm="Delete reservation for {{ $b->guest_name }}?"
                                     >
                                         @csrf
                                         @method('DELETE')
