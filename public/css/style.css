@@ -2476,3 +2476,59 @@ a.btn,
 button {
     white-space: nowrap;
 }
+
+/* =========================================================
+   PASSWORD BOX WITH AN EYE BUTTON (show / hide)
+   ========================================================= */
+
+.password-field {
+    position: relative;
+}
+
+.login-field .password-field input,
+.password-field input {
+    padding-right: 44px;
+}
+
+/* Edge has its own eye; hide it so there are not two */
+.password-field input::-ms-reveal {
+    display: none;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+
+    transform: translateY(-50%);
+
+    min-height: 0;
+    padding: 6px;
+
+    background: none;
+    color: var(--muted);
+
+    border: 0;
+}
+
+.password-toggle:hover {
+    background: none;
+    color: var(--nav);
+}
+
+.password-toggle:active {
+    transform: translateY(-50%);
+}
+
+.password-toggle svg {
+    display: block;
+}
+
+/* the line through the eye shows while the password is visible */
+.password-toggle .slash {
+    display: none;
+}
+
+.password-toggle.on .slash {
+    display: inline;
+}

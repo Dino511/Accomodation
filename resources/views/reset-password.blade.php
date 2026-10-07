@@ -53,28 +53,46 @@
 
                 <div class="login-field">
                     <label for="password">New password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="At least 8 characters"
-                        autocomplete="new-password"
-                        minlength="8"
-                        required
-                        autofocus
-                    >
+                    <div class="password-field">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="At least 8 characters"
+                            autocomplete="new-password"
+                            minlength="8"
+                            required
+                            autofocus
+                        >
+                        <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePassword(this)">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                                <line class="slash" x1="3" y1="3" x2="21" y2="21"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="login-field">
                     <label for="password_confirmation">Repeat the password</label>
-                    <input
-                        type="password"
-                        id="password_confirmation"
-                        name="password_confirmation"
-                        autocomplete="new-password"
-                        minlength="8"
-                        required
-                    >
+                    <div class="password-field">
+                        <input
+                            type="password"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            autocomplete="new-password"
+                            minlength="8"
+                            required
+                        >
+                        <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePassword(this)">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                                <line class="slash" x1="3" y1="3" x2="21" y2="21"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="primary login-button">
@@ -89,6 +107,18 @@
         </div>
 
     </div>
+
+    <script>
+        // the eye button: show or hide what is typed in the password box beside it
+        function togglePassword(button) {
+            const field = button.parentElement.querySelector('input');
+            const show = field.type === 'password';
+
+            field.type = show ? 'text' : 'password';
+            button.classList.toggle('on', show);
+            button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        }
+    </script>
 
 </body>
 </html>
